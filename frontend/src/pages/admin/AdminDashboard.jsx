@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { UsersIcon, WrenchScrewdriverIcon, BriefcaseIcon, CurrencyDollarIcon, CalendarIcon, CreditCardIcon, StarIcon } from '@heroicons/react/24/outline'
+import { UsersIcon, WrenchScrewdriverIcon, BriefcaseIcon, CurrencyDollarIcon, CalendarIcon, CreditCardIcon } from '@heroicons/react/24/outline'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
-import { getAllDocuments, queryDocuments } from '../../services/firestoreService'
+import { getCollectionCount, getRecentDocuments, queryDocuments } from '../../services/firestoreService'
 import { dummyUsers, dummyServices, dummyBookings, dummyJobs, dummyGigs } from '../../utils/dummyData'
-import { PageLoader } from '../../components/LoadingSpinner'
+import { DashboardSkeleton } from '../../components/SkeletonLoader'
+import ErrorState from '../../components/ErrorState'
 
 const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
 
-// Generate realistic monthly data
 const generateMonthlyData = (totalBookings, totalRevenue) => {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
-  return months.map((month, i) => ({
+  return months.map((month) => ({
     month,
     bookings: Math.round((totalBookings / 6) * (0.6 + Math.random() * 0.8)),
     revenue: Math.round((totalRevenue / 6) * (0.5 + Math.random() * 1.0)),
@@ -21,37 +21,44 @@ const generateMonthlyData = (totalBookings, totalRevenue) => {
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     loadStats()
   }, [])
 
   const loadStats = async () => {
+    setLoading(true)
+    setError(null)
     try {
-      // Load from Firestore directly
-      const [users, services, bookings, jobs, gigs, reviews] = await Promise.all([
-        getAllDocuments('users'),
-        getAllDocuments('services'),
-        getAllDocuments('bookings'),
-        getAllDocuments('jobs'),
-        getAllDocuments('gigs'),
-        getAllDocuments('reviews'),
+      // Use counts instead of fetching full collections where possible
+      const [userCount, serviceCount, bookingCount, jobCount, gigCount, reviewCount] = await Promise.all([
+        getCollectionCount('users').catch(() => 0),
+        getCollectionCount('services').catch(() => 0),
+        getCollectionCount('bookings').catch(() => 0),
+        getCollectionCount('jobs').catch(() => 0),
+        getCollectionCount('gigs').catch(() => 0),
+        getCollectionCount('reviews').catch(() => 0),
       ])
 
-      // Use Firestore data if available, otherwise fallback to dummy
-      const totalUsers = users.length > 0 ? users.length : dummyUsers.length
-      const totalServices = services.length > 0 ? services.length : dummyServices.length
-      const totalBookings = bookings.length > 0 ? bookings.length : dummyBookings.length
-      const totalJobs = jobs.length > 0 ? jobs.length : dummyJobs.length
-      const totalGigs = gigs.length > 0 ? gigs.length : dummyGigs.length
-      const totalReviews = reviews.length
+      // Only fetch what we actually need for computation
+      const [bookings, users] = await Promise.all([
+        getRecentDocuments('bookings', 50).catch(() => []),
+        getRecentDocuments('users', 50).catch(() => []),
+      ])
+
+      const totalUsers = userCount > 0 ? userCount : dummyUsers.length
+      const totalServices = serviceCount > 0 ? serviceCount : dummyServices.length
+      const totalBookings = bookingCount > 0 ? bookingCount : dummyBookings.length
+      const totalJobs = jobCount > 0 ? jobCount : dummyJobs.length
+      const totalGigs = gigCount > 0 ? gigCount : dummyGigs.length
+      const totalReviews = reviewCount
 
       const paidBookings = bookings.length > 0
         ? bookings.filter(b => b.payment_status === 'paid')
         : dummyBookings.filter(b => b.payment_status === 'paid')
       const totalRevenue = paidBookings.reduce((sum, b) => sum + (b.amount || 0), 0)
 
-      // User distribution
       const activeUsers = users.length > 0 ? users : dummyUsers
       const customerCount = activeUsers.filter(u => u.user_type === 'customer').length
       const workerCount = activeUsers.filter(u => u.user_type === 'worker').length
@@ -71,7 +78,7 @@ export default function AdminDashboard() {
       })
     } catch (err) {
       console.error('Error loading admin stats:', err)
-      // Set fallback data
+      setError('Failed to load admin data')
       setStats({
         total_users: dummyUsers.length,
         total_services: dummyServices.length,
@@ -88,7 +95,13 @@ export default function AdminDashboard() {
     }
   }
 
-  if (loading) return <PageLoader text="Loading admin data…" />
+  if (loading) return <DashboardSkeleton />
+
+  if (error && !stats) return (
+    <div className="p-6 max-w-7xl mx-auto">
+      <ErrorState title="Admin Dashboard Error" message={error} onRetry={loadStats} />
+    </div>
+  )
 
   const statCards = [
     { label: 'Total Users', value: stats?.total_users || 0, icon: UsersIcon, color: 'bg-blue-500', to: '/admin/users' },
@@ -128,7 +141,6 @@ export default function AdminDashboard() {
 
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Revenue chart */}
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-5">
           <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Monthly Revenue (₹)</h2>
           <ResponsiveContainer width="100%" height={240}>
@@ -142,7 +154,6 @@ export default function AdminDashboard() {
           </ResponsiveContainer>
         </div>
 
-        {/* Bookings trend */}
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-5">
           <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Monthly Bookings</h2>
           <ResponsiveContainer width="100%" height={240}>
@@ -171,7 +182,6 @@ export default function AdminDashboard() {
           </ResponsiveContainer>
         </div>
 
-        {/* Quick links */}
         <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-5">
           <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Quick Management</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

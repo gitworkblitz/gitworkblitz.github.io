@@ -5,7 +5,7 @@ import { getJobById, applyToJob, hasUserApplied } from '../../services/firestore
 import { dummyJobs, formatSalaryRange } from '../../utils/dummyData'
 import { MapPinIcon, CalendarIcon, BriefcaseIcon, CurrencyDollarIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
-import { PageLoader } from '../../components/LoadingSpinner'
+import { DetailSkeleton } from '../../components/SkeletonLoader'
 
 export default function JobDetailsPage() {
   const { id } = useParams()
@@ -67,11 +67,14 @@ export default function JobDetailsPage() {
         userId: user.uid,
         applicantName: userProfile?.name || user.displayName || user.email,
         applicantEmail: user.email,
+        applicantPhone: userProfile?.phone || '',
         coverLetter: coverLetter,
         jobTitle: job.title,
         company: job.company,
+        employerId: job.employer_id || job.posted_by,
+        location: userProfile?.location || '',
       })
-      toast.success('Application submitted successfully! 🎉')
+      toast.success('You have successfully applied!')
       setApplied(true)
       setShowForm(false)
     } catch (e) {
@@ -87,8 +90,10 @@ export default function JobDetailsPage() {
     }
   }
 
-  if (loading) return <PageLoader />
+  if (loading) return <DetailSkeleton />
   if (!job) return null
+
+  const isEmployer = user && (job.employer_id === user.uid || userProfile?.user_type === 'employer')
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -100,6 +105,11 @@ export default function JobDetailsPage() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900 mb-1">{job.title}</h1>
               <p className="text-lg text-gray-600">{job.company}</p>
+              {isEmployer && (
+                <Link to={`/jobs/${id}/applicants`} className="inline-flex items-center gap-2 mt-2 text-sm text-primary-600 hover:text-primary-700 font-medium">
+                  View Applicants
+                </Link>
+              )}
             </div>
             <div className="flex-shrink-0">
               {applied ? (

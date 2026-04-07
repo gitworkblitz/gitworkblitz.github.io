@@ -50,7 +50,7 @@ export function AuthProvider({ children }) {
       profile = { ...snap.data(), uid: cred.user.uid }
       setUserProfile(profile)
     }
-    toast.success('Welcome back! 👋')
+    toast.success('Welcome back!')
     return { user: cred.user, profile }
   }
 
@@ -84,7 +84,7 @@ export function AuthProvider({ children }) {
     }
     await setDoc(doc(db, 'users', cred.user.uid), profile)
     setUserProfile(profile)
-    toast.success('Account created! 🎉')
+    toast.success('Account created successfully!')
     return { user: cred.user, profile }
   }
 

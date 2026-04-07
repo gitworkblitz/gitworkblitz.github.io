@@ -1,4 +1,5 @@
 import React from 'react'
+import { PageSkeleton } from './SkeletonLoader'
 
 export default function LoadingSpinner({ size = 'md', text = '' }) {
   const sizes = { sm: 'w-6 h-6', md: 'w-10 h-10', lg: 'w-14 h-14' }
@@ -10,10 +11,6 @@ export default function LoadingSpinner({ size = 'md', text = '' }) {
   )
 }
 
-export function PageLoader({ text = 'Loading...' }) {
-  return (
-    <div className="min-h-[60vh] flex items-center justify-center">
-      <LoadingSpinner size="lg" text={text} />
-    </div>
-  )
+export function PageLoader() {
+  return <PageSkeleton />
 }

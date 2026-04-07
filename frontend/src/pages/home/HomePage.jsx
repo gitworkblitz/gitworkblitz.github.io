@@ -4,15 +4,17 @@ import { motion } from 'framer-motion'
 import {
   WrenchScrewdriverIcon, BriefcaseIcon, CurrencyDollarIcon,
   CalendarIcon, ShieldCheckIcon, StarIcon, ClockIcon, UserGroupIcon,
-  MapPinIcon, ArrowRightIcon
+  MapPinIcon, ArrowRightIcon, CheckCircleIcon, UserIcon, MagnifyingGlassIcon, SparklesIcon
 } from '@heroicons/react/24/outline'
 import { StarIcon as StarSolid, CheckBadgeIcon } from '@heroicons/react/24/solid'
-import { getAllServices, getPublicTestimonials } from '../../services/firestoreService'
+import { getPublicTestimonials } from '../../services/firestoreService'
+import { useDataCache } from '../../context/DataCacheContext'
 import {
-  dummyServices, dummyReviews, dummyWorkers, dummyJobs, dummyGigs,
+  dummyReviews, dummyJobs, dummyGigs,
   SERVICE_CATEGORIES, calculateWorkerScore, formatCurrencyINR, formatSalaryRange
 } from '../../utils/dummyData'
 import ServiceCard from '../../components/ServiceCard'
+import { CategoryIconBadge } from '../../components/CategoryIcon'
 
 const features = [
   { icon: WrenchScrewdriverIcon, title: 'Local Services', desc: 'Find trusted professionals for all your home & office needs', color: 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800' },
@@ -26,37 +28,35 @@ const features = [
 ]
 
 const stats = [
-  { value: '10,000+', label: 'Services Completed', icon: '✅' },
-  { value: '5,000+', label: 'Active Users', icon: '👥' },
-  { value: '1,200+', label: 'Job Placements', icon: '💼' },
-  { value: '800+', label: 'Freelance Gigs', icon: '🚀' },
+  { value: '10,000+', label: 'Services Completed', icon: CheckCircleIcon },
+  { value: '5,000+', label: 'Active Users', icon: UserGroupIcon },
+  { value: '1,200+', label: 'Job Placements', icon: BriefcaseIcon },
+  { value: '800+', label: 'Freelance Gigs', icon: SparklesIcon },
 ]
 
 const fadeUp = { hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0, transition: { duration: 0.45 } } }
 const stagger = { show: { transition: { staggerChildren: 0.08 } } }
 
 export default function HomePage() {
-  const [featuredServices, setFeaturedServices] = useState([])
+  const { services: cachedServices, jobs: cachedJobs, gigs: cachedGigs, workers: cachedWorkers } = useDataCache()
   const [testimonials, setTestimonials] = useState([])
 
+  const featuredServices = useMemo(() => cachedServices.slice(0, 6), [cachedServices])
+
   const topWorkers = useMemo(() => {
-    return dummyWorkers
+    return cachedWorkers
       .map(w => ({
         ...w,
         match_score: calculateWorkerScore({ ...w, distance: Math.round(Math.random() * 5 + 1) })
       }))
       .sort((a, b) => b.match_score - a.match_score)
       .slice(0, 4)
-  }, [])
+  }, [cachedWorkers])
 
-  const latestJobs = useMemo(() => dummyJobs.slice(0, 4), [])
-  const activeGigs = useMemo(() => dummyGigs.filter(g => g.status === 'active').slice(0, 4), [])
+  const latestJobs = useMemo(() => (cachedJobs.length > 0 ? cachedJobs : dummyJobs).slice(0, 4), [cachedJobs])
+  const activeGigs = useMemo(() => (cachedGigs.length > 0 ? cachedGigs : dummyGigs).filter(g => g.status === 'open').slice(0, 4), [cachedGigs])
 
   useEffect(() => {
-    getAllServices()
-      .then(data => setFeaturedServices(data.length > 0 ? data.slice(0, 6) : dummyServices.slice(0, 6)))
-      .catch(() => setFeaturedServices(dummyServices.slice(0, 6)))
-
     getPublicTestimonials()
       .then(reviews => setTestimonials(reviews.length >= 3 ? reviews.slice(0, 6) : dummyReviews.filter(r => r.rating >= 4)))
       .catch(() => setTestimonials(dummyReviews.filter(r => r.rating >= 4)))
@@ -124,10 +124,12 @@ export default function HomePage() {
             <p className="text-gray-500 dark:text-gray-400">Find the right service for your needs</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
-            {SERVICE_CATEGORIES.map(({ label, emoji, value }) => (
+            {SERVICE_CATEGORIES.map(({ label, value, icon: Icon }) => (
               <Link key={label} to={`/find-workers?category=${encodeURIComponent(value)}`}
                 className="flex flex-col items-center gap-2.5 bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 text-center group border border-gray-100 dark:border-gray-800">
-                <span className="text-3xl group-hover:scale-110 transition-transform duration-300">{emoji}</span>
+                <div className="w-12 h-12 rounded-xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <Icon className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+                </div>
                 <span className="text-xs font-medium text-gray-600 dark:text-gray-300 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{label}</span>
               </Link>
             ))}
@@ -142,7 +144,9 @@ export default function HomePage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {stats.map((s, i) => (
                 <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} viewport={{ once: true }} className="text-center">
-                  <span className="text-2xl mb-2 block">{s.icon}</span>
+                  <div className="w-10 h-10 mx-auto mb-2 rounded-lg bg-white/10 flex items-center justify-center">
+                    <s.icon className="w-5 h-5 text-white" />
+                  </div>
                   <p className="text-3xl md:text-4xl font-extrabold text-white mb-1">{s.value}</p>
                   <p className="text-primary-200 text-sm">{s.label}</p>
                 </motion.div>
@@ -366,13 +370,13 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
             <div className="hidden md:block absolute top-14 left-[20%] right-[20%] h-0.5 bg-gradient-to-r from-primary-200 via-primary-400 to-primary-200 dark:from-primary-800 dark:via-primary-600 dark:to-primary-800" />
             {[
-              { n: '1', title: 'Create Account', desc: 'Sign up in seconds. Choose your role and set up your profile.', icon: '👤' },
-              { n: '2', title: 'Find & Connect', desc: 'Browse services, jobs, or gigs. Our smart matching finds the best fit.', icon: '🔍' },
-              { n: '3', title: 'Book & Grow', desc: 'Schedule appointments, make secure payments, and track status.', icon: '🚀' },
-            ].map(({ n, title, desc, icon }, i) => (
+              { n: '1', title: 'Create Account', desc: 'Sign up in seconds. Choose your role and set up your profile.', icon: UserIcon },
+              { n: '2', title: 'Find & Connect', desc: 'Browse services, jobs, or gigs. Our smart matching finds the best fit.', icon: MagnifyingGlassIcon },
+              { n: '3', title: 'Book & Grow', desc: 'Schedule appointments, make secure payments, and track status.', icon: SparklesIcon },
+            ].map(({ n, title, desc, icon: Icon }, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.15 }} viewport={{ once: true }} className="text-center relative z-10">
-                <div className="w-16 h-16 bg-white dark:bg-gray-800 border-2 border-primary-200 dark:border-primary-700 text-2xl rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-sm">
-                  {icon}
+                <div className="w-16 h-16 bg-white dark:bg-gray-800 border-2 border-primary-200 dark:border-primary-700 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-sm">
+                  <Icon className="w-7 h-7 text-primary-600" />
                 </div>
                 <div className="bg-primary-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold mx-auto -mt-8 mb-3 relative z-10 shadow-md">{n}</div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{title}</h3>

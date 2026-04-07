@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { getDocument, getBookingInvoice } from '../../services/firestoreService'
 import { formatCurrencyINR } from '../../utils/dummyData'
+import { DetailSkeleton } from '../../components/SkeletonLoader'
 import { ArrowDownTrayIcon, PrinterIcon } from '@heroicons/react/24/outline'
 
 export default function InvoiceViewPage() {
@@ -27,13 +28,7 @@ export default function InvoiceViewPage() {
 
   const handlePrint = () => window.print()
 
-  if (loading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
+  if (loading) return <DetailSkeleton />
 
   if (!invoice) {
     return (

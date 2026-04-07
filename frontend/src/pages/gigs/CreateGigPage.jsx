@@ -39,7 +39,7 @@ export default function CreateGigPage() {
         freelancer_id: user.uid,
         freelancer_name: userProfile?.name || user.displayName || user.email,
       })
-      toast.success('Gig created successfully! 🎉')
+      toast.success('Gig created successfully!')
       navigate('/gigs')
     } catch (e) {
       console.error('Create gig error:', e)

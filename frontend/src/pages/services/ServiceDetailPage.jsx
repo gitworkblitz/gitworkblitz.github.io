@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getServiceById, createBooking, getServiceReviews } from '../../services/firestoreService'
-import { dummyServices, dummyReviews, TIME_SLOTS, formatCurrencyINR, calculateWorkerScore } from '../../utils/dummyData'
+import { autoAssignWorker } from '../../services/workerMatchingService'
+import { dummyServices, dummyReviews, TIME_SLOTS, formatCurrencyINR } from '../../utils/dummyData'
+import { DetailSkeleton } from '../../components/SkeletonLoader'
+import { CategoryIconBadge } from '../../components/CategoryIcon'
 import toast from 'react-hot-toast'
 import {
   StarIcon, MapPinIcon, ClockIcon, CalendarIcon, ShieldCheckIcon,
-  UserIcon, PhoneIcon, CurrencyRupeeIcon
+  UserIcon, CurrencyRupeeIcon, CheckCircleIcon, ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
-import { StarIcon as StarSolid } from '@heroicons/react/24/solid'
+import { StarIcon as StarSolid, CheckBadgeIcon } from '@heroicons/react/24/solid'
 
 export default function ServiceDetailPage() {
   const { id } = useParams()
@@ -21,6 +24,8 @@ export default function ServiceDetailPage() {
   const [selectedSlot, setSelectedSlot] = useState('')
   const [address, setAddress] = useState('')
   const [bookingLoading, setBookingLoading] = useState(false)
+  const [matchedWorker, setMatchedWorker] = useState(null)
+  const [matchingWorker, setMatchingWorker] = useState(false)
 
   useEffect(() => {
     loadService()
@@ -29,14 +34,11 @@ export default function ServiceDetailPage() {
   const loadService = async () => {
     setLoading(true)
     try {
-      // Try Firestore first
       let data = await getServiceById(id)
       if (!data) {
-        // Fallback to dummy
         data = dummyServices.find(s => s.id === id) || null
       }
       setService(data)
-      // Load reviews
       const srvReviews = await getServiceReviews(id)
       setReviews(srvReviews.length > 0 ? srvReviews : dummyReviews.filter(r => r.service_id === id))
     } catch (err) {
@@ -45,6 +47,28 @@ export default function ServiceDetailPage() {
       setService(dummy || null)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Auto-match worker when date and slot are selected
+  useEffect(() => {
+    if (bookingDate && selectedSlot && service?.category) {
+      matchWorker()
+    } else {
+      setMatchedWorker(null)
+    }
+  }, [bookingDate, selectedSlot])
+
+  const matchWorker = async () => {
+    setMatchingWorker(true)
+    try {
+      const worker = await autoAssignWorker(service.category, bookingDate, selectedSlot)
+      setMatchedWorker(worker)
+    } catch (err) {
+      console.error('Worker matching failed:', err)
+      setMatchedWorker(null)
+    } finally {
+      setMatchingWorker(false)
     }
   }
 
@@ -60,20 +84,23 @@ export default function ServiceDetailPage() {
     }
     setBookingLoading(true)
     try {
+      const workerId = matchedWorker?.id || service.worker_id || ''
+      const workerName = matchedWorker?.name || service.worker_name || ''
+
       const bookingId = await createBooking({
         service_id: id,
         service_title: service.title,
         category: service.category,
         customer_id: user.uid,
         customer_name: userProfile?.name || 'Customer',
-        worker_id: service.worker_id || '',
-        worker_name: service.worker_name || '',
+        worker_id: workerId,
+        worker_name: workerName,
         booking_date: bookingDate,
         time_slot: selectedSlot,
         address: address || userProfile?.location || '',
         amount: service.price || 0,
       })
-      toast.success('🎉 Booking confirmed! Redirecting...')
+      toast.success('Your booking has been placed successfully')
       navigate(`/bookings/${bookingId}`)
     } catch (err) {
       toast.error(err.message || 'Failed to create booking')
@@ -82,13 +109,7 @@ export default function ServiceDetailPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
+  if (loading) return <DetailSkeleton />
 
   if (!service) {
     return (
@@ -99,7 +120,6 @@ export default function ServiceDetailPage() {
     )
   }
 
-  // Today's date for min attribute
   const today = new Date().toISOString().split('T')[0]
 
   return (
@@ -107,7 +127,7 @@ export default function ServiceDetailPage() {
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
         <Link to="/services" className="hover:text-primary-600">Services</Link>
-        <span>›</span>
+        <span>&rsaquo;</span>
         <span className="text-gray-900 font-medium">{service.title}</span>
       </div>
 
@@ -116,9 +136,8 @@ export default function ServiceDetailPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Hero card */}
           <div className="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden">
-            {/* Image area */}
             <div className="h-56 bg-gradient-to-br from-primary-50 via-blue-50 to-violet-50 flex items-center justify-center relative">
-              <span className="text-7xl">{service.image_emoji || '🔧'}</span>
+              <CategoryIconBadge category={service.category} size="xl" />
               <div className="absolute top-4 left-4">
                 <span className="bg-white/90 backdrop-blur-sm text-gray-700 text-sm font-medium px-3 py-1.5 rounded-full shadow-sm">{service.category}</span>
               </div>
@@ -157,7 +176,7 @@ export default function ServiceDetailPage() {
                     <StarSolid className="w-3.5 h-3.5 text-yellow-400" />
                     <span>{service.rating || 0}</span>
                   </div>
-                  <span>•</span>
+                  <span>&bull;</span>
                   <span>{service.total_reviews || 0} reviews</span>
                 </div>
               </div>
@@ -248,6 +267,55 @@ export default function ServiceDetailPage() {
                 </div>
               </div>
 
+              {/* Matched Worker Card */}
+              {matchingWorker && (
+                <div className="bg-gray-50 rounded-xl p-4 text-center">
+                  <div className="w-6 h-6 border-2 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">Finding best available worker...</p>
+                </div>
+              )}
+
+              {matchedWorker && !matchingWorker && (
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CheckCircleIcon className="w-5 h-5 text-green-600" />
+                    <span className="text-sm font-semibold text-green-800">Best Worker Matched</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-11 h-11 rounded-full ${matchedWorker.avatar_color || 'bg-primary-500'} flex items-center justify-center text-white font-bold text-sm`}>
+                      {matchedWorker.name[0]}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1">
+                        <p className="text-sm font-semibold text-gray-900 truncate">{matchedWorker.name}</p>
+                        <CheckBadgeIcon className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                        <span className="flex items-center gap-0.5"><StarSolid className="w-3 h-3 text-yellow-400" />{matchedWorker.rating}</span>
+                        <span>&bull;</span>
+                        <span>{matchedWorker.experience_years || 0}yr exp</span>
+                        <span>&bull;</span>
+                        <span>{matchedWorker.completion_rate || 95}%</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-xs">
+                    <span className="text-gray-500 flex items-center gap-1"><MapPinIcon className="w-3 h-3" />{matchedWorker.location}</span>
+                    <span className="font-semibold text-primary-600">Score: {matchedWorker.match_score}/100</span>
+                  </div>
+                </div>
+              )}
+
+              {bookingDate && selectedSlot && !matchedWorker && !matchingWorker && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-start gap-2">
+                  <ExclamationTriangleIcon className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-yellow-800">No workers available</p>
+                    <p className="text-xs text-yellow-600 mt-0.5">Try selecting a different date or time slot</p>
+                  </div>
+                </div>
+              )}
+
               {/* Address */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -261,8 +329,8 @@ export default function ServiceDetailPage() {
               </div>
 
               {/* Book button */}
-              <button onClick={handleBooking} disabled={bookingLoading}
-                className="w-full btn-primary py-3.5 text-base flex items-center justify-center gap-2 shadow-md">
+              <button onClick={handleBooking} disabled={bookingLoading || (!matchedWorker && bookingDate && selectedSlot)}
+                className="w-full btn-primary py-3.5 text-base flex items-center justify-center gap-2 shadow-md disabled:opacity-50">
                 {bookingLoading ? (
                   <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Booking...</>
                 ) : (

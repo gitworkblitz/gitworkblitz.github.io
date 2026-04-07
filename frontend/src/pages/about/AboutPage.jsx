@@ -19,7 +19,7 @@ const values = [
 const team = [
   { name: 'Asif Jamil Ahmad', role: 'Founder', initials: 'AJA', gradient: 'from-blue-500 to-indigo-600' },
   { name: 'Danish', role: 'Co-Founder', initials: 'D', gradient: 'from-purple-500 to-pink-600' },
-  { name: 'Infinity', role: 'CTO', initials: '∞', gradient: 'from-orange-500 to-red-600' },
+  { name: 'Team Lead', role: 'CTO', initials: 'TL', gradient: 'from-orange-500 to-red-600' },
 ]
 
 export default function AboutPage() {

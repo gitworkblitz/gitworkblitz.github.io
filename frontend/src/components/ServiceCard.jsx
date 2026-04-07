@@ -3,15 +3,15 @@ import { Link } from 'react-router-dom'
 import { StarIcon } from '@heroicons/react/24/solid'
 import { MapPinIcon, UserIcon } from '@heroicons/react/24/outline'
 import { formatCurrencyINR } from '../utils/dummyData'
+import { CategoryIconBadge } from './CategoryIcon'
 
 export default function ServiceCard({ service }) {
   const s = service
   return (
     <Link to={`/services/${s.id}`}
       className="bg-white dark:bg-gray-900 rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-1 overflow-hidden group border border-gray-100 dark:border-gray-800 flex flex-col">
-      {/* Image/emoji header */}
       <div className="h-40 bg-gradient-to-br from-primary-50 to-blue-50 dark:from-primary-900/20 dark:to-blue-900/20 flex items-center justify-center relative overflow-hidden">
-        <span className="text-5xl group-hover:scale-110 transition-transform duration-300">{s.image_emoji || '🔧'}</span>
+        <CategoryIconBadge category={s.category} size="xl" />
         {/* Category badge */}
         <div className="absolute top-3 left-3">
           <span className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-gray-700 dark:text-gray-200 text-xs font-medium px-2.5 py-1 rounded-full shadow-sm">{s.category}</span>

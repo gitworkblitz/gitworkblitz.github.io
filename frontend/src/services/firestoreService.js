@@ -1,8 +1,9 @@
 import {
   collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc,
-  query, where, orderBy, limit, serverTimestamp, setDoc
+  query, where, orderBy, limit, serverTimestamp, setDoc, getCountFromServer
 } from 'firebase/firestore'
 import { db } from './firebase'
+import { createNotification } from './notificationService'
 
 // ===================== Generic CRUD =====================
 
@@ -66,6 +67,48 @@ export async function getAllDocuments(collectionName) {
   }
 }
 
+// Optimized: fetch limited + ordered documents
+export async function getRecentDocuments(collectionName, limitCount = 50, orderField = 'createdAt', dir = 'desc') {
+  try {
+    const q = query(collection(db, collectionName), orderBy(orderField, dir), limit(limitCount))
+    const snap = await getDocs(q)
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  } catch (err) {
+    // Fallback to unordered if index missing
+    try {
+      const q = query(collection(db, collectionName), limit(limitCount))
+      const snap = await getDocs(q)
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    } catch (err2) {
+      console.error(`Error getting recent ${collectionName}:`, err2)
+      return []
+    }
+  }
+}
+
+// Optimized: fetch active items with limit
+export async function getActiveDocuments(collectionName, activeField = 'is_active', limitCount = 50) {
+  try {
+    const q = query(collection(db, collectionName), where(activeField, '==', true), limit(limitCount))
+    const snap = await getDocs(q)
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  } catch (err) {
+    // Fallback
+    return getRecentDocuments(collectionName, limitCount)
+  }
+}
+
+// Optimized: get collection count without fetching docs
+export async function getCollectionCount(collectionName) {
+  try {
+    const snap = await getCountFromServer(collection(db, collectionName))
+    return snap.data().count
+  } catch (err) {
+    console.error(`Error counting ${collectionName}:`, err)
+    return 0
+  }
+}
+
 export async function queryDocuments(collectionName, field, operator, value) {
   try {
     const q = query(collection(db, collectionName), where(field, operator, value))
@@ -88,8 +131,8 @@ export async function createService(serviceData) {
   })
 }
 
-export async function getAllServices() {
-  return await getAllDocuments('services')
+export async function getAllServices(max = 100) {
+  return await getRecentDocuments('services', max)
 }
 
 export async function getServiceById(id) {
@@ -110,8 +153,8 @@ export async function createJob(jobData) {
   })
 }
 
-export async function getAllJobs() {
-  return await getAllDocuments('jobs')
+export async function getAllJobs(max = 100) {
+  return await getRecentDocuments('jobs', max)
 }
 
 export async function getJobById(id) {
@@ -133,8 +176,8 @@ export async function createGig(gigData) {
   })
 }
 
-export async function getAllGigs() {
-  return await getAllDocuments('gigs')
+export async function getAllGigs(max = 100) {
+  return await getRecentDocuments('gigs', max)
 }
 
 export async function getGigById(id) {
@@ -156,6 +199,16 @@ export async function acceptGig(gigId, userId, userName) {
     assignedName: userName,
     status: 'in-progress',
   })
+
+  // Notify employer
+  if (gig.employer_id) {
+    await createNotification(
+      gig.employer_id,
+      `${userName} accepted your gig: ${gig.title}`,
+      'gig'
+    )
+  }
+
   return true
 }
 
@@ -165,6 +218,16 @@ export async function completeGig(gigId, userId) {
   if (gig.assignedTo !== userId) throw new Error('Only the assigned user can complete this gig')
 
   await updateDocument('gigs', gigId, { status: 'completed' })
+
+  // Notify employer
+  if (gig.employer_id) {
+    await createNotification(
+      gig.employer_id,
+      `Gig "${gig.title}" has been marked as completed`,
+      'gig'
+    )
+  }
+
   return true
 }
 
@@ -178,10 +241,21 @@ export async function applyToJob(applicationData) {
     throw new Error('You have already applied to this job')
   }
 
-  return await createDocument('applications', {
+  const appId = await createDocument('applications', {
     ...applicationData,
     status: 'applied',
   })
+
+  // Notify employer
+  if (applicationData.employerId) {
+    await createNotification(
+      applicationData.employerId,
+      `${applicationData.applicantName} applied for ${applicationData.jobTitle}`,
+      'job'
+    )
+  }
+
+  return appId
 }
 
 export async function getJobApplications(jobId) {
@@ -197,6 +271,10 @@ export async function hasUserApplied(jobId, userId) {
   return apps.some(a => a.userId === userId)
 }
 
+export async function updateApplicationStatus(applicationId, status) {
+  return await updateDocument('applications', applicationId, { status })
+}
+
 // ===================== Reviews =====================
 
 export async function createReview(reviewData) {
@@ -206,7 +284,6 @@ export async function createReview(reviewData) {
   }
   const reviewId = await createDocument('reviews', reviewData)
 
-  // Auto-update worker average rating
   if (reviewData.worker_id) {
     await updateWorkerRating(reviewData.worker_id)
   }
@@ -244,13 +321,11 @@ export async function updateWorkerRating(workerId) {
     const avgRating = reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length
     const roundedRating = Math.round(avgRating * 10) / 10
 
-    // Update worker's user profile
     await updateDocument('users', workerId, {
       rating: roundedRating,
       total_reviews: reviews.length,
     })
 
-    // Also update any services by this worker
     const services = await queryDocuments('services', 'worker_id', '==', workerId)
     for (const svc of services) {
       await updateDocument('services', svc.id, {
@@ -265,26 +340,43 @@ export async function updateWorkerRating(workerId) {
 
 // ===================== Bookings =====================
 
-/**
- * Check if a worker is already booked for specific date + time slot.
- * Prevents double-booking: same worker + same date + same slot.
- */
+// Strict 4-step status flow
+const VALID_TRANSITIONS = {
+  requested: ['accepted', 'cancelled'],
+  accepted: ['on_the_way'],
+  on_the_way: ['completed'],
+  completed: [],
+  cancelled: [],
+}
+
 export async function checkDoubleBooking(workerId, date, timeSlot) {
   try {
-    const bookings = await queryDocuments('bookings', 'worker_id', '==', workerId)
-    return bookings.some(
-      b => b.booking_date === date &&
-           b.time_slot === timeSlot &&
-           b.status !== 'cancelled'
+    // Use where() to narrow the query instead of fetching all bookings for this worker
+    const q = query(
+      collection(db, 'bookings'),
+      where('worker_id', '==', workerId),
+      where('booking_date', '==', date),
+      where('time_slot', '==', timeSlot)
     )
+    const snap = await getDocs(q)
+    return snap.docs.some(d => d.data().status !== 'cancelled')
   } catch (err) {
-    console.error('Error checking double booking:', err)
-    return false
+    // Fallback if composite index is missing
+    try {
+      const bookings = await queryDocuments('bookings', 'worker_id', '==', workerId)
+      return bookings.some(
+        b => b.booking_date === date &&
+             b.time_slot === timeSlot &&
+             b.status !== 'cancelled'
+      )
+    } catch {
+      console.error('Error checking double booking:', err)
+      return false
+    }
   }
 }
 
 export async function createBooking(bookingData) {
-  // Enforce double-booking prevention
   if (bookingData.worker_id && bookingData.booking_date && bookingData.time_slot) {
     const isBooked = await checkDoubleBooking(
       bookingData.worker_id,
@@ -296,15 +388,48 @@ export async function createBooking(bookingData) {
     }
   }
 
-  return await createDocument('bookings', {
+  const bookingId = await createDocument('bookings', {
     ...bookingData,
     status: 'requested',
     payment_status: 'pending',
   })
+
+  // Notify worker about new booking
+  if (bookingData.worker_id) {
+    await createNotification(
+      bookingData.worker_id,
+      `New booking request for ${bookingData.service_title} on ${bookingData.booking_date}`,
+      'booking'
+    )
+  }
+
+  return bookingId
 }
 
-export async function updateBookingStatus(bookingId, status) {
-  return await updateDocument('bookings', bookingId, { status })
+export async function updateBookingStatus(bookingId, newStatus) {
+  const booking = await getDocument('bookings', bookingId)
+  if (!booking) throw new Error('Booking not found')
+
+  const currentStatus = booking.status
+  const allowed = VALID_TRANSITIONS[currentStatus] || []
+
+  if (!allowed.includes(newStatus)) {
+    throw new Error(`Cannot change status from "${currentStatus}" to "${newStatus}"`)
+  }
+
+  await updateDocument('bookings', bookingId, { status: newStatus })
+
+  // Notify customer about status change
+  if (booking.customer_id && newStatus !== 'cancelled') {
+    const labels = { accepted: 'Accepted', on_the_way: 'On the Way', completed: 'Completed' }
+    await createNotification(
+      booking.customer_id,
+      `Your booking for ${booking.service_title} is now: ${labels[newStatus] || newStatus}`,
+      'booking'
+    )
+  }
+
+  return true
 }
 
 export async function getUserBookings(userId) {

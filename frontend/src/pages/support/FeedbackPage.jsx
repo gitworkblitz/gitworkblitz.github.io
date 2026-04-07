@@ -31,7 +31,7 @@ export default function FeedbackPage() {
     await new Promise(r => setTimeout(r, 1200))
     setSubmitted(true)
     setSending(false)
-    toast.success('Thank you for your feedback! 🙏')
+    toast.success('Thank you for your feedback!')
   }
 
   if (submitted) {
@@ -41,7 +41,7 @@ export default function FeedbackPage() {
           <div className="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <FaceSmileIcon className="w-10 h-10 text-primary-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">Thank You! 🎉</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">Thank You!</h2>
           <p className="text-gray-500 mb-6">Your feedback helps us make WorkSphere better for everyone. We truly appreciate your time.</p>
           <div className="flex gap-3 justify-center">
             <button onClick={() => { setSubmitted(false); setForm({ category: '', rating: 0, message: '', name: '', email: '' }) }} className="btn-secondary">Send More Feedback</button>

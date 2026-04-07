@@ -5,15 +5,18 @@ import toast from 'react-hot-toast'
 import api from '../../services/api'
 import { getAllDocuments, updateDocument } from '../../services/firestoreService'
 import { dummyServices, formatCurrencyINR } from '../../utils/dummyData'
-import { PageLoader } from '../../components/LoadingSpinner'
+import { TableSkeleton } from '../../components/SkeletonLoader'
+import ErrorState from '../../components/ErrorState'
 
 export default function ManageServices() {
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [search, setSearch] = useState('')
 
   const fetchServices = async () => {
     setLoading(true)
+    setError(null)
     try {
       const res = await api.get('/api/services/')
       const data = res.data || []
@@ -24,6 +27,7 @@ export default function ManageServices() {
         setServices(data.length > 0 ? data : dummyServices)
       } catch {
         setServices(dummyServices)
+        setError('Failed to load services from server')
       }
     } finally { setLoading(false) }
   }
@@ -59,7 +63,9 @@ export default function ManageServices() {
     !search || s.title?.toLowerCase().includes(search.toLowerCase()) || s.category?.toLowerCase().includes(search.toLowerCase()) || s.worker_name?.toLowerCase().includes(search.toLowerCase())
   )
 
-  if (loading) return <PageLoader />
+  if (loading) return <div className="p-6"><TableSkeleton rows={6} /></div>
+
+  if (error) return <div className="p-6"><ErrorState title="Error Loading Services" message={error} onRetry={fetchServices} /></div>
 
   return (
     <div className="p-6">

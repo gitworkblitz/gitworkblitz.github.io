@@ -3,10 +3,10 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getGigById, acceptGig, completeGig } from '../../services/firestoreService'
 import { dummyGigs, formatCurrencyINR } from '../../utils/dummyData'
-import { ClockIcon, StarIcon } from '@heroicons/react/24/solid'
+import { ClockIcon, StarIcon, MapPinIcon } from '@heroicons/react/24/solid'
 import { UserCircleIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
-import { PageLoader } from '../../components/LoadingSpinner'
+import { DetailSkeleton } from '../../components/SkeletonLoader'
 
 const STATUS_BADGE = {
   open: 'bg-green-100 text-green-700',
@@ -36,7 +36,6 @@ export default function GigDetailsPage() {
         navigate('/gigs')
         return
       }
-      // Ensure status exists
       if (!data.status) data.status = 'open'
       setGig(data)
     } catch (err) {
@@ -52,8 +51,8 @@ export default function GigDetailsPage() {
     try {
       setActionLoading(true)
       await acceptGig(id, user.uid, userProfile?.name || user.displayName || user.email)
-      toast.success('Gig accepted! You can now start working. 🎉')
-      await loadGig() // Refresh data
+      toast.success('Gig accepted! You can now start working.')
+      await loadGig()
     } catch (e) {
       console.error('Accept gig error:', e)
       toast.error(e.message || 'Failed to accept gig')
@@ -65,7 +64,7 @@ export default function GigDetailsPage() {
     try {
       setActionLoading(true)
       await completeGig(id, user.uid)
-      toast.success('Gig marked as completed! 💰')
+      toast.success('Gig marked as completed!')
       await loadGig()
     } catch (e) {
       console.error('Complete gig error:', e)
@@ -73,7 +72,7 @@ export default function GigDetailsPage() {
     } finally { setActionLoading(false) }
   }
 
-  if (loading) return <PageLoader />
+  if (loading) return <DetailSkeleton />
   if (!gig) return null
 
   const isOwner = user && (gig.employer_id === user.uid || gig.freelancer_id === user.uid)
@@ -83,10 +82,12 @@ export default function GigDetailsPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Link to="/gigs" className="text-sm text-primary-600 hover:text-primary-700 mb-6 block">← Back to Gigs</Link>
+        <Link to="/gigs" className="inline-flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 mb-6">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          Back to Gigs
+        </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main content */}
           <div className="lg:col-span-2 space-y-5">
             <div className="card p-6">
               <div className="flex items-center justify-between mb-3">
@@ -118,7 +119,6 @@ export default function GigDetailsPage() {
               </div>
             </div>
 
-            {/* Assigned info */}
             {gig.assignedTo && (
               <div className={`card p-5 border-l-4 ${gig.status === 'completed' ? 'border-green-500 bg-green-50' : 'border-blue-500 bg-blue-50'}`}>
                 <div className="flex items-center gap-2">
@@ -136,17 +136,18 @@ export default function GigDetailsPage() {
             )}
           </div>
 
-          {/* Sidebar */}
           <div>
             <div className="card p-6 sticky top-24">
               <p className="text-3xl font-extrabold text-primary-600 mb-1">{formatCurrencyINR(Number(gig.price || gig.budget || 0))}</p>
-              <div className="flex items-center gap-1.5 text-sm text-gray-500 mb-6"><ClockIcon className="w-4 h-4" />{gig.delivery_time} days delivery</div>
+              <div className="flex items-center gap-1.5 text-sm text-gray-500 mb-6">
+                <ClockIcon className="w-4 h-4" />
+                {gig.delivery_time || 7} days delivery
+              </div>
 
-              {/* Action buttons based on state */}
               {gig.status === 'open' && !isOwner && (
                 <button onClick={handleAcceptGig} disabled={actionLoading}
                   className="btn-primary w-full py-3 mb-3 flex items-center justify-center gap-2">
-                  {actionLoading ? 'Accepting…' : '🚀 Accept Gig'}
+                  {actionLoading ? 'Accepting...' : 'Accept Gig'}
                 </button>
               )}
 
@@ -168,7 +169,7 @@ export default function GigDetailsPage() {
               {isAssigned && gig.status === 'in-progress' && (
                 <button onClick={handleCompleteGig} disabled={actionLoading}
                   className="bg-green-600 hover:bg-green-700 text-white w-full py-3 rounded-xl font-medium mb-3 flex items-center justify-center gap-2 transition-colors">
-                  {actionLoading ? 'Completing…' : '✅ Mark as Completed'}
+                  {actionLoading ? 'Completing...' : 'Mark as Completed'}
                 </button>
               )}
 
@@ -181,7 +182,9 @@ export default function GigDetailsPage() {
               )}
 
               {gig.location && (
-                <p className="text-xs text-gray-400 text-center mt-2">📍 {gig.location}</p>
+                <p className="text-xs text-gray-400 text-center mt-2 flex items-center justify-center gap-1">
+                  <MapPinIcon className="w-3 h-3" /> {gig.location}
+                </p>
               )}
             </div>
           </div>

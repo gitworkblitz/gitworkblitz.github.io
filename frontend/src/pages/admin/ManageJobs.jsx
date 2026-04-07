@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { getAllDocuments, updateDocument } from '../../services/firestoreService'
 import { formatCurrencyINR } from '../../utils/dummyData'
 import { dummyJobs } from '../../utils/dummyData'
+import { TableSkeleton } from '../../components/SkeletonLoader'
 import toast from 'react-hot-toast'
 
 export default function ManageJobs() {
@@ -26,7 +27,7 @@ export default function ManageJobs() {
     } catch { toast.error('Failed to update') }
   }
 
-  if (loading) return <div className="flex justify-center py-20"><div className="w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" /></div>
+  if (loading) return <div className="p-6"><TableSkeleton rows={5} /></div>
 
   return (
     <div>

@@ -3,6 +3,7 @@ import { getAllDocuments, updateDocument, deleteDocument } from '../../services/
 import { dummyReviews } from '../../utils/dummyData'
 import { StarIcon as StarSolid } from '@heroicons/react/24/solid'
 import { TrashIcon, CheckCircleIcon, XCircleIcon, FunnelIcon } from '@heroicons/react/24/outline'
+import { TableSkeleton } from '../../components/SkeletonLoader'
 import toast from 'react-hot-toast'
 
 export default function ManageReviews() {
@@ -55,7 +56,7 @@ export default function ManageReviews() {
     avgRating: reviews.length > 0 ? (reviews.reduce((s, r) => s + (r.rating || 0), 0) / reviews.length).toFixed(1) : '0.0',
   }
 
-  if (loading) return <div className="flex justify-center py-20"><div className="w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" /></div>
+  if (loading) return <div className="p-6"><TableSkeleton rows={5} /></div>
 
   return (
     <div>
@@ -157,7 +158,7 @@ export default function ManageReviews() {
                 <div className="flex flex-col gap-2 flex-shrink-0">
                   {r.moderated ? (
                     <span className={`badge text-xs ${r.moderation_status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                      {r.moderation_status === 'approved' ? '✓ Approved' : '✕ Removed'}
+                      {r.moderation_status === 'approved' ? 'Approved' : 'Removed'}
                     </span>
                   ) : (
                     <>

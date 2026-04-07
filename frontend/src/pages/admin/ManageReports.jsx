@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { getAllReports } from '../../services/firestoreService'
 import { FlagIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 import { updateDocument } from '../../services/firestoreService'
+import { TableSkeleton } from '../../components/SkeletonLoader'
 import toast from 'react-hot-toast'
 
 const dummyReports = [
@@ -32,7 +33,7 @@ export default function ManageReports() {
     } catch { toast.error('Failed to resolve') }
   }
 
-  if (loading) return <div className="flex justify-center py-20"><div className="w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" /></div>
+  if (loading) return <div className="p-6"><TableSkeleton rows={3} /></div>
 
   return (
     <div>

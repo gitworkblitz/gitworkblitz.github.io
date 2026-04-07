@@ -3,10 +3,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { EnvelopeIcon, LockClosedIcon, UserIcon, PhoneIcon, MapPinIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 
+import { ShoppingBagIcon, WrenchScrewdriverIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline'
+
 const ROLES = [
-  { value: 'customer', label: 'Customer', desc: 'Book services & hire professionals', icon: '🛒' },
-  { value: 'worker', label: 'Worker', desc: 'Offer your skills & get hired', icon: '🔧' },
-  { value: 'employer', label: 'Employer', desc: 'Post jobs & find talent', icon: '🏢' },
+  { value: 'customer', label: 'Customer', desc: 'Book services and hire professionals', icon: ShoppingBagIcon },
+  { value: 'worker', label: 'Worker', desc: 'Offer your skills and get hired', icon: WrenchScrewdriverIcon },
+  { value: 'employer', label: 'Employer', desc: 'Post jobs and find talent', icon: BuildingOfficeIcon },
 ]
 
 export default function SignupPage() {
@@ -123,7 +125,9 @@ export default function SignupPage() {
                           ? 'border-primary-600 bg-primary-50 shadow-sm'
                           : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                       }`}>
-                      <span className="text-2xl">{r.icon}</span>
+                      <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                        <r.icon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                      </div>
                       <div className="flex-1">
                         <p className="font-semibold text-gray-900">{r.label}</p>
                         <p className="text-xs text-gray-500">{r.desc}</p>

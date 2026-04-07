@@ -4,14 +4,15 @@ import { useAuth } from '../../context/AuthContext'
 import { getDocument, updateBookingStatus, simulatePayment, generateInvoice, getBookingInvoice, createReview, queryDocuments } from '../../services/firestoreService'
 import { BOOKING_STATUSES, formatCurrencyINR } from '../../utils/dummyData'
 import ReviewModal from '../../components/ReviewModal'
+import { DetailSkeleton } from '../../components/SkeletonLoader'
 import toast from 'react-hot-toast'
 import {
-  CalendarIcon, ClockIcon, MapPinIcon, UserIcon, CurrencyRupeeIcon,
-  CheckCircleIcon, TruckIcon, PhoneIcon
+  CalendarIcon, ClockIcon, MapPinIcon, CurrencyRupeeIcon,
+  CheckCircleIcon, TruckIcon
 } from '@heroicons/react/24/outline'
 import { StarIcon as StarSolid } from '@heroicons/react/24/solid'
 
-const STATUS_FLOW = ['requested', 'accepted', 'on_the_way', 'in_progress', 'completed']
+const STATUS_FLOW = ['requested', 'accepted', 'on_the_way', 'completed']
 
 export default function BookingDetailPage() {
   const { id } = useParams()
@@ -36,7 +37,6 @@ export default function BookingDetailPage() {
         const inv = await getBookingInvoice(id)
         setInvoice(inv)
       }
-      // Check for existing review
       const reviews = await queryDocuments('reviews', 'booking_id', '==', id)
       if (reviews.length > 0) setExistingReview(reviews[0])
     } catch (err) {
@@ -52,9 +52,10 @@ export default function BookingDetailPage() {
     try {
       await updateBookingStatus(id, newStatus)
       setBooking(prev => ({ ...prev, status: newStatus }))
-      toast.success(`Status updated to ${newStatus.replace('_', ' ')}`)
+      const labels = { accepted: 'Accepted', on_the_way: 'On the Way', completed: 'Completed', cancelled: 'Cancelled' }
+      toast.success(`Status updated to ${labels[newStatus] || newStatus}`)
     } catch (err) {
-      toast.error('Failed to update status')
+      toast.error(err.message || 'Failed to update status')
     } finally {
       setActionLoading(false)
     }
@@ -95,13 +96,7 @@ export default function BookingDetailPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
+  if (loading) return <DetailSkeleton />
 
   if (!booking) {
     return (
@@ -118,13 +113,11 @@ export default function BookingDetailPage() {
   const currentStatusIndex = STATUS_FLOW.indexOf(booking.status)
   const canReview = booking.status === 'completed' && isCustomer && !existingReview
 
-  // Determine next status action for worker
   const getNextAction = () => {
     if (!isWorker) return null
     if (booking.status === 'requested') return { label: 'Accept Booking', status: 'accepted', color: 'btn-primary' }
     if (booking.status === 'accepted') return { label: 'On the Way', status: 'on_the_way', color: 'bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors font-medium' }
-    if (booking.status === 'on_the_way') return { label: 'Start Service', status: 'in_progress', color: 'bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors font-medium' }
-    if (booking.status === 'in_progress') return { label: 'Mark Completed', status: 'completed', color: 'bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium' }
+    if (booking.status === 'on_the_way') return { label: 'Mark Completed', status: 'completed', color: 'bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium' }
     return null
   }
 
@@ -136,7 +129,7 @@ export default function BookingDetailPage() {
       <div className="flex items-start justify-between mb-8">
         <div>
           <Link to="/dashboard/bookings" className="text-sm text-primary-600 hover:text-primary-700 mb-2 inline-flex items-center gap-1">
-            ← Back to bookings
+            &larr; Back to bookings
           </Link>
           <h1 className="text-2xl font-bold text-gray-900 mt-1">Booking Details</h1>
           <p className="text-sm text-gray-500 mt-1">ID: {id?.slice(0, 12)}...</p>
@@ -146,7 +139,7 @@ export default function BookingDetailPage() {
             <span key={s.key} className={`px-3 py-1.5 rounded-full text-sm font-medium ${s.color}`}>{s.label}</span>
           ))}
           {booking.payment_status === 'paid' && (
-            <span className="badge-paid px-3 py-1.5">₹ Paid</span>
+            <span className="bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-sm font-medium">Paid</span>
           )}
         </div>
       </div>
@@ -155,10 +148,9 @@ export default function BookingDetailPage() {
       <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-6 mb-6">
         <h3 className="font-semibold text-gray-900 mb-5">Service Status</h3>
         <div className="flex items-center justify-between relative">
-          {/* Progress line */}
           <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200 z-0" />
           <div className="absolute top-5 left-0 h-0.5 bg-primary-600 z-0 transition-all duration-500"
-            style={{ width: `${(currentStatusIndex / (STATUS_FLOW.length - 1)) * 100}%` }} />
+            style={{ width: currentStatusIndex >= 0 ? `${(currentStatusIndex / (STATUS_FLOW.length - 1)) * 100}%` : '0%' }} />
 
           {STATUS_FLOW.map((status, i) => {
             const isComplete = i <= currentStatusIndex
@@ -189,7 +181,6 @@ export default function BookingDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Details */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Service info */}
           <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-6">
             <h3 className="font-semibold text-gray-900 mb-4">Service Information</h3>
             <div className="space-y-3">
@@ -201,7 +192,6 @@ export default function BookingDetailPage() {
             </div>
           </div>
 
-          {/* People */}
           <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-6">
             <h3 className="font-semibold text-gray-900 mb-4">People</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -210,7 +200,6 @@ export default function BookingDetailPage() {
             </div>
           </div>
 
-          {/* Existing review */}
           {existingReview && (
             <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-6">
               <h3 className="font-semibold text-gray-900 mb-4">Your Review</h3>
@@ -233,7 +222,6 @@ export default function BookingDetailPage() {
 
         {/* Actions sidebar */}
         <div className="space-y-4">
-          {/* Worker actions */}
           {nextAction && (
             <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-5">
               <h4 className="font-semibold text-gray-900 mb-3">Worker Actions</h4>
@@ -246,7 +234,6 @@ export default function BookingDetailPage() {
             </div>
           )}
 
-          {/* Payment */}
           {isCustomer && booking.payment_status !== 'paid' && booking.status !== 'cancelled' && (
             <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-5">
               <h4 className="font-semibold text-gray-900 mb-2">Payment</h4>
@@ -267,7 +254,6 @@ export default function BookingDetailPage() {
             </div>
           )}
 
-          {/* Invoice */}
           {invoice && (
             <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-5">
               <h4 className="font-semibold text-gray-900 mb-2">Invoice</h4>
@@ -283,10 +269,9 @@ export default function BookingDetailPage() {
             </div>
           )}
 
-          {/* Review */}
           {canReview && (
             <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl border border-yellow-200 p-5">
-              <h4 className="font-semibold text-gray-900 mb-2">Rate & Review</h4>
+              <h4 className="font-semibold text-gray-900 mb-2">Rate and Review</h4>
               <p className="text-sm text-gray-600 mb-4">Service completed! Share your experience.</p>
               <button onClick={() => setShowReview(true)} className="w-full bg-yellow-500 text-white px-4 py-2.5 rounded-xl hover:bg-yellow-600 transition-colors font-semibold flex items-center justify-center gap-2">
                 <StarSolid className="w-5 h-5" />
@@ -295,17 +280,15 @@ export default function BookingDetailPage() {
             </div>
           )}
 
-          {/* Cancel (only if requested) */}
           {isCustomer && booking.status === 'requested' && (
             <button onClick={() => handleStatusUpdate('cancelled')} disabled={actionLoading}
-              className="w-full btn-danger py-2.5 text-sm">
+              className="w-full bg-red-50 text-red-600 border border-red-200 px-4 py-2.5 rounded-xl hover:bg-red-100 transition-colors font-medium text-sm">
               Cancel Booking
             </button>
           )}
         </div>
       </div>
 
-      {/* Review Modal */}
       {showReview && (
         <ReviewModal onClose={() => setShowReview(false)} onSubmit={handleReviewSubmit} />
       )}

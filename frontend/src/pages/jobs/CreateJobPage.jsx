@@ -41,7 +41,7 @@ export default function CreateJobPage() {
         poster_name: userProfile?.name || user.displayName || user.email,
         employer_id: user.uid,
       })
-      toast.success('Job posted successfully! 🎉')
+      toast.success('Job posted successfully!')
       navigate('/jobs')
     } catch (e) {
       console.error('Create job error:', e)
@@ -62,7 +62,7 @@ export default function CreateJobPage() {
             ))}
             <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label><textarea {...register('description',{required:'Description is required'})} rows={4} className="input-field" placeholder="Describe the role and responsibilities…" />{errors.description&&<p className="text-red-500 text-xs mt-1">{errors.description.message}</p>}</div>
             <div className="grid grid-cols-2 gap-4">
-              <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Location</label><input {...register('location',{required:'Location is required'})} className="input-field" placeholder="Bangalore" />{errors.location&&<p className="text-red-500 text-xs mt-1">{errors.location.message}</p>}</div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Location</label><input {...register('location',{required:'Location is required'})} className="input-field" placeholder="Delhi NCR" />{errors.location&&<p className="text-red-500 text-xs mt-1">{errors.location.message}</p>}</div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Type</label>
                 <select {...register('employment_type',{required:'Type is required'})} className="input-field">
                   {['full_time','part_time','contract','internship','remote'].map(t=><option key={t} value={t}>{t.replace('_',' ')}</option>)}

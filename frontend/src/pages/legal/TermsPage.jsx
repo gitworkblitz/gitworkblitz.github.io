@@ -13,11 +13,11 @@ These terms apply to all users of the platform, including customers, service pro
     title: 'Account Registration',
     content: `To use certain features of WorkSphere, you must create an account. You agree to:
 
-• Provide accurate, current, and complete information during registration
-• Maintain the security of your account credentials
-• Notify us immediately of any unauthorized access to your account
-• Accept responsibility for all activities under your account
-• Not create multiple accounts or share your account with others
+- Provide accurate, current, and complete information during registration
+- Maintain the security of your account credentials
+- Notify us immediately of any unauthorized access to your account
+- Accept responsibility for all activities under your account
+- Not create multiple accounts or share your account with others
 
 We reserve the right to suspend or terminate accounts that violate these terms.`
   },
@@ -25,39 +25,39 @@ We reserve the right to suspend or terminate accounts that violate these terms.`
     title: 'Service Marketplace',
     content: `WorkSphere provides a platform connecting service providers with customers. We facilitate:
 
-• **Service Listings:** Providers can list their services with descriptions, pricing, and availability
-• **Bookings:** Customers can browse, compare, and book services through our platform
-• **Payments:** Secure payment processing in Indian Rupees (₹) with GST-compliant invoicing
-• **Reviews:** Honest ratings and reviews from verified customers
+- Service Listings: Providers can list their services with descriptions, pricing, and availability
+- Bookings: Customers can browse, compare, and book services through our platform
+- Payments: Secure payment processing in Indian Rupees with GST-compliant invoicing
+- Reviews: Honest ratings and reviews from verified customers
 
 WorkSphere acts as an intermediary and is not responsible for the quality or outcome of services provided by individual workers.`
   },
   {
     title: 'Payments & Refunds',
-    content: `• All prices are listed in Indian Rupees (₹) and include applicable taxes
-• Payments are processed securely through our payment partners
-• Service providers receive payouts after successful service completion
-• Refund requests must be made within 48 hours of service completion
-• WorkSphere charges a platform fee of 10% on each transaction
-• GST invoices are auto-generated for all completed payments
+    content: `- All prices are listed in Indian Rupees and include applicable taxes
+- Payments are processed securely through our payment partners
+- Service providers receive payouts after successful service completion
+- Refund requests must be made within 48 hours of service completion
+- WorkSphere charges a platform fee of 10% on each transaction
+- GST invoices are auto-generated for all completed payments
 
 Cancellation Policy:
-• Free cancellation up to 24 hours before the scheduled service
-• 50% charge for cancellations within 24 hours
-• No refund for no-shows`
+- Free cancellation up to 24 hours before the scheduled service
+- 50% charge for cancellations within 24 hours
+- No refund for no-shows`
   },
   {
     title: 'User Conduct',
     content: `Users of WorkSphere agree not to:
 
-• Violate any applicable laws or regulations
-• Post false, misleading, or fraudulent content
-• Harass, abuse, or threaten other users
-• Manipulate ratings or reviews
-• Use the platform for unauthorized commercial purposes
-• Attempt to circumvent platform fees by transacting outside WorkSphere
-• Upload malicious content or interfere with platform operations
-• Impersonate other users or entities`
+- Violate any applicable laws or regulations
+- Post false, misleading, or fraudulent content
+- Harass, abuse, or threaten other users
+- Manipulate ratings or reviews
+- Use the platform for unauthorized commercial purposes
+- Attempt to circumvent platform fees by transacting outside WorkSphere
+- Upload malicious content or interfere with platform operations
+- Impersonate other users or entities`
   },
   {
     title: 'Intellectual Property',
@@ -69,18 +69,18 @@ Users retain ownership of content they create (listings, reviews, profiles) but 
     title: 'Limitation of Liability',
     content: `WorkSphere is provided "as is" without warranties of any kind. To the fullest extent permitted by law:
 
-• We are not liable for any indirect, incidental, or consequential damages
-• Our total liability shall not exceed the amount paid by you in the last 12 months
-• We are not responsible for disputes between users and service providers
-• We do not guarantee uninterrupted or error-free service availability`
+- We are not liable for any indirect, incidental, or consequential damages
+- Our total liability shall not exceed the amount paid by you in the last 12 months
+- We are not responsible for disputes between users and service providers
+- We do not guarantee uninterrupted or error-free service availability`
   },
   {
     title: 'Dispute Resolution',
     content: `Any disputes arising from these terms shall be:
 
-• First attempted to be resolved through our internal dispute resolution process
-• If unresolved, submitted to binding arbitration under Indian Arbitration and Conciliation Act
-• Subject to the exclusive jurisdiction of courts in Bangalore, Karnataka, India
+- First attempted to be resolved through our internal dispute resolution process
+- If unresolved, submitted to binding arbitration under Indian Arbitration and Conciliation Act
+- Subject to the exclusive jurisdiction of courts in Delhi NCR, India
 
 Users may contact our dispute resolution team at disputes@worksphere.in.`
   },
@@ -92,16 +92,15 @@ Users may contact our dispute resolution team at disputes@worksphere.in.`
     title: 'Contact Information',
     content: `For questions about these Terms of Service, please contact us:
 
-• **Email:** legal@worksphere.in
-• **Phone:** +91 80-4567-8900
-• **Address:** WorkSphere HQ, HSR Layout, Bangalore 560102, India`
+- Email: legal@worksphere.in
+- Phone: +91 11 4567 8900
+- Address: WorkSphere HQ, Connaught Place, New Delhi 110001, India`
   },
 ]
 
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <section className="bg-gradient-to-br from-primary-700 to-primary-800 text-white py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur rounded-full px-4 py-2 text-sm font-medium text-primary-100 mb-4">
@@ -112,7 +111,6 @@ export default function TermsPage() {
         </div>
       </section>
 
-      {/* Content */}
       <section className="py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white rounded-2xl shadow-card p-8 md:p-12">

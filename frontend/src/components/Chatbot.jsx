@@ -5,21 +5,20 @@ import api from '../services/api'
 
 const SUGGESTIONS = ['How to book?', 'Payment methods', 'Cancel booking', 'Find a worker', 'Track my booking']
 
-// Client-side FAQ fallback when backend is unreachable
 const LOCAL_FAQ = {
-  'how to book': 'Booking is easy! Go to Services → select a service → pick a date and time slot → confirm your booking. Track everything in Dashboard → My Bookings. 📅',
-  'payment': 'We support secure payments in ₹ INR. After payment, GST invoices are auto-generated. View them in Dashboard → My Invoices. 💳',
-  'cancel': 'You can cancel a booking from My Bookings before the service starts. Refunds are processed within 3-5 business days. 🔄',
-  'find worker': 'Visit the "Find Workers" page to browse professionals. Our smart matching ranks workers by rating, experience, and completion rate. 🔍',
-  'track': 'Track your booking from Dashboard → My Bookings. Status updates: Requested → Confirmed → In Progress → Completed. 📍',
-  'review': 'After a booking is completed, you can leave a star rating and review. Your feedback helps others find the best professionals! ⭐',
-  'refund': 'Refunds for cancelled bookings are processed within 3-5 business days to your original payment method. 💰',
-  'service': 'We have 20+ service categories — Electrician, Plumber, Carpenter, AC Repair, Salon at Home, Pest Control, and more! Browse them in Services. 🔧',
-  'job': 'Check the Jobs section for full-time, part-time, and contract opportunities. Filter by location and skills! 💼',
-  'gig': 'Browse freelance gigs in the Gigs section. Fixed-price projects with clear deliverables. You can also post your own! 🚀',
-  'account': 'Manage your profile from Dashboard → Profile. Update name, phone, location, and skills anytime. 👤',
-  'contact': 'Need help? Email support@worksphere.com or visit the Help Center. You can also report issues from Dashboard. 📧',
-  'match': 'Workers are matched using: 35% Rating + 25% Experience + 20% Distance + 20% Completion Rate. No AI — just smart math! 📊',
+  'how to book': 'Booking is easy! Go to Services -> select a service -> pick a date and time slot -> confirm your booking. Track everything in Dashboard -> My Bookings.',
+  'payment': 'We support secure payments in INR. After payment, GST invoices are auto-generated. View them in Dashboard -> My Invoices.',
+  'cancel': 'You can cancel a booking from My Bookings before the service starts. Refunds are processed within 3-5 business days.',
+  'find worker': 'Visit the "Find Workers" page to browse professionals. Our smart matching ranks workers by rating, experience, and completion rate.',
+  'track': 'Track your booking from Dashboard -> My Bookings. Status updates: Requested -> Confirmed -> In Progress -> Completed.',
+  'review': 'After a booking is completed, you can leave a star rating and review. Your feedback helps others find the best professionals!',
+  'refund': 'Refunds for cancelled bookings are processed within 3-5 business days to your original payment method.',
+  'service': 'We have 20+ service categories - Electrician, Plumber, Carpenter, AC Repair, Salon at Home, Pest Control, and more! Browse them in Services.',
+  'job': 'Check the Jobs section for full-time, part-time, and contract opportunities. Filter by location and skills!',
+  'gig': 'Browse freelance gigs in the Gigs section. Fixed-price projects with clear deliverables. You can also post your own!',
+  'account': 'Manage your profile from Dashboard -> Profile. Update name, phone, location, and skills anytime.',
+  'contact': 'Need help? Email support@worksphere.com or visit the Help Center. You can also report issues from Dashboard.',
+  'match': 'Workers are matched using: 35% Rating + 25% Experience + 20% Distance + 20% Completion Rate. Smart math, not AI!',
 }
 
 function getLocalAnswer(message) {
@@ -28,7 +27,7 @@ function getLocalAnswer(message) {
     if (msg.includes(key)) return answer
   }
   if (/hello|hi|hey|help/.test(msg)) {
-    return "Hello! I'm WorkSphere Assistant. I can help with booking services, payments, finding workers, jobs & gigs. What do you need? 😊"
+    return "Hello! I am WorkSphere Assistant. I can help with booking services, payments, finding workers, jobs and gigs. What do you need?"
   }
   return null
 }
@@ -36,7 +35,7 @@ function getLocalAnswer(message) {
 export default function Chatbot() {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState([
-    { id: 1, text: "Hi! I'm WorkSphere Assistant 👋 Ask me about booking services, payments, jobs, or anything about the platform!", from: 'bot' }
+    { id: 1, text: "Hi! I am WorkSphere Assistant. Ask me about booking services, payments, jobs, or anything about the platform!", from: 'bot' }
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -54,16 +53,14 @@ export default function Chatbot() {
       const res = await api.post('/api/chatbot/chat', { message: text })
       setMessages(p => [...p, { id: Date.now() + 1, text: res.data.response, from: 'bot' }])
     } catch {
-      // Client-side FAQ fallback
       const localAnswer = getLocalAnswer(text)
-      const fallbackText = localAnswer || "I can help with: 📋 Booking, 💼 Jobs & Gigs, 💳 Payments, 👤 Account help. Try asking about any of these!"
+      const fallbackText = localAnswer || "I can help with: Booking, Jobs and Gigs, Payments, Account help. Try asking about any of these!"
       setMessages(p => [...p, { id: Date.now() + 1, text: fallbackText, from: 'bot' }])
     } finally { setLoading(false) }
   }
 
   return (
     <>
-      {/* Floating trigger button */}
       <AnimatePresence>
         {!open && (
           <motion.button
@@ -77,7 +74,6 @@ export default function Chatbot() {
         )}
       </AnimatePresence>
 
-      {/* Chat window */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -88,7 +84,6 @@ export default function Chatbot() {
             className="fixed bottom-6 right-6 w-[380px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 z-40 flex flex-col overflow-hidden"
             style={{ maxHeight: '540px' }}>
 
-            {/* Header */}
             <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-5 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
@@ -98,7 +93,7 @@ export default function Chatbot() {
                   <p className="text-white font-semibold text-sm">WorkSphere Assistant</p>
                   <p className="text-primary-200 text-xs flex items-center gap-1">
                     <span className="w-1.5 h-1.5 bg-green-400 rounded-full" />
-                    Help & FAQ
+                    Help and FAQ
                   </p>
                 </div>
               </div>
@@ -107,7 +102,6 @@ export default function Chatbot() {
               </button>
             </div>
 
-            {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50" style={{ minHeight: '280px', maxHeight: '320px' }}>
               {messages.map(m => (
                 <motion.div key={m.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
@@ -133,7 +127,6 @@ export default function Chatbot() {
               <div ref={endRef} />
             </div>
 
-            {/* Quick suggestions */}
             <div className="px-4 py-2.5 bg-white border-t border-gray-100">
               <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
                 {SUGGESTIONS.map(s => (
@@ -145,19 +138,18 @@ export default function Chatbot() {
               </div>
             </div>
 
-            {/* Input */}
             <div className="px-4 py-3 bg-white border-t border-gray-100">
               <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 focus-within:border-primary-400 focus-within:ring-2 focus-within:ring-primary-100 transition-all">
                 <input value={input} onChange={e => setInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
-                  placeholder="Ask about bookings, payments…"
+                  placeholder="Ask about bookings, payments..."
                   className="flex-1 bg-transparent text-sm outline-none text-gray-700 placeholder-gray-400" />
                 <button onClick={() => send()} disabled={!input.trim() || loading}
                   className="text-primary-600 hover:text-primary-800 disabled:opacity-30 transition-colors flex-shrink-0 p-1">
                   <PaperAirplaneIcon className="w-5 h-5" />
                 </button>
               </div>
-              <p className="text-[10px] text-gray-400 text-center mt-1.5">Powered by WorkSphere · Help & Support only</p>
+              <p className="text-[10px] text-gray-400 text-center mt-1.5">Powered by WorkSphere - Help and Support only</p>
             </div>
           </motion.div>
         )}

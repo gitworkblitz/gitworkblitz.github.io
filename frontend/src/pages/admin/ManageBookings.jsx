@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { CalendarIcon } from '@heroicons/react/24/outline'
 import { getAllDocuments, updateDocument } from '../../services/firestoreService'
 import { dummyBookings } from '../../utils/dummyData'
+import { TableSkeleton } from '../../components/SkeletonLoader'
 import toast from 'react-hot-toast'
 
 const STATUS_CLASSES = {
@@ -47,7 +48,7 @@ export default function ManageBookings() {
     .filter(b => filter === 'all' || b.status === filter)
     .filter(b => !search || b.service_title?.toLowerCase().includes(search.toLowerCase()) || b.customer_name?.toLowerCase().includes(search.toLowerCase()) || b.worker_name?.toLowerCase().includes(search.toLowerCase()))
 
-  if (loading) return <div className="flex justify-center py-20"><div className="w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" /></div>
+  if (loading) return <div className="p-6"><TableSkeleton rows={6} /></div>
 
   return (
     <div className="p-6">

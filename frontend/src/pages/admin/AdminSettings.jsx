@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import toast from 'react-hot-toast'
-import { Cog6ToothIcon, EnvelopeIcon, ShieldCheckIcon, BellIcon } from '@heroicons/react/24/outline'
+import { Cog6ToothIcon, EnvelopeIcon, ShieldCheckIcon, BellIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 
 export default function AdminSettings() {
   const { userProfile } = useAuth()
@@ -94,7 +94,7 @@ export default function AdminSettings() {
             <h3 className="font-semibold text-gray-900">Security</h3>
           </div>
           <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
-            <p className="text-sm text-green-800 font-medium">✅ Firebase Authentication is active</p>
+            <p className="text-sm text-green-800 font-medium flex items-center gap-1.5"><CheckCircleIcon className="w-4 h-4 text-green-600" /> Firebase Authentication is active</p>
             <p className="text-xs text-green-600 mt-1">All user sessions are managed via Firebase Auth. Admin access is restricted to {settings.adminEmail}</p>
           </div>
           <button onClick={handleSave} className="btn-primary">Save Settings</button>

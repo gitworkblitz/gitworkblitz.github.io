@@ -4,15 +4,18 @@ import toast from 'react-hot-toast'
 import api from '../../services/api'
 import { getAllDocuments, updateDocument } from '../../services/firestoreService'
 import { dummyUsers } from '../../utils/dummyData'
-import { PageLoader } from '../../components/LoadingSpinner'
+import { TableSkeleton } from '../../components/SkeletonLoader'
+import ErrorState from '../../components/ErrorState'
 
 export default function ManageUsers() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [search, setSearch] = useState('')
 
   const fetchUsers = async () => {
     setLoading(true)
+    setError(null)
     try {
       const res = await api.get('/api/admin/users')
       const data = res.data || []
@@ -24,6 +27,7 @@ export default function ManageUsers() {
         setUsers(data.length > 0 ? data : dummyUsers)
       } catch {
         setUsers(dummyUsers)
+        setError('Failed to load users from server')
       }
     } finally { setLoading(false) }
   }
@@ -61,7 +65,9 @@ export default function ManageUsers() {
 
   const filtered = users.filter(u => !search || u.name?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase()))
 
-  if (loading) return <PageLoader />
+  if (loading) return <div className="p-6"><TableSkeleton rows={6} /></div>
+
+  if (error) return <div className="p-6"><ErrorState title="Error Loading Users" message={error} onRetry={fetchUsers} /></div>
 
   return (
     <div className="p-6">

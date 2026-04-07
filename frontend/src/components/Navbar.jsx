@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { Menu, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
+import NotificationBell from './NotificationBell'
 import {
   Bars3Icon, XMarkIcon, UserCircleIcon, ArrowRightOnRectangleIcon,
   ShieldCheckIcon, ChevronDownIcon, Squares2X2Icon, SunIcon, MoonIcon
@@ -24,12 +25,10 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 
-  // Close mobile menu on route change
   useEffect(() => {
     setMobileOpen(false)
   }, [location.pathname])
 
-  // Scroll detection for glassmorphism
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20)
     window.addEventListener('scroll', handler, { passive: true })
@@ -67,15 +66,16 @@ export default function Navbar() {
           </div>
 
           {/* Auth section */}
-          <div className="hidden md:flex items-center gap-3">
-            {/* Theme toggle */}
+          <div className="hidden md:flex items-center gap-2">
             <button onClick={toggleTheme} aria-label="Toggle dark mode"
               className="p-2 rounded-lg transition-all duration-200 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800">
               {darkMode ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
             </button>
 
             {user ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <NotificationBell />
+
                 <Link to="/dashboard" className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all text-gray-700 dark:text-gray-300 hover:text-primary-600 hover:bg-gray-50 dark:hover:bg-gray-800">
                   <Squares2X2Icon className="w-4 h-4" />
                   Dashboard
@@ -99,7 +99,7 @@ export default function Navbar() {
                     <Menu.Items className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 py-1.5 focus:outline-none">
                       <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-700">
                         <p className="text-sm font-semibold text-gray-900 dark:text-white">{userProfile?.name || 'User'}</p>
-                        <p className="text-xs text-gray-400 capitalize">{userProfile?.user_type} • {user.email}</p>
+                        <p className="text-xs text-gray-400 capitalize">{userProfile?.user_type} &middot; {user.email}</p>
                       </div>
 
                       <Menu.Item>{({ active }) => (
@@ -144,6 +144,7 @@ export default function Navbar() {
 
           {/* Mobile toggle */}
           <div className="flex items-center gap-2 md:hidden">
+            {user && <NotificationBell />}
             <button onClick={toggleTheme} aria-label="Toggle dark mode"
               className="p-2 rounded-lg transition-colors text-gray-500 dark:text-gray-400">
               {darkMode ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}

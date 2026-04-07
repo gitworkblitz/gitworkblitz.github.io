@@ -8,8 +8,8 @@ import toast from 'react-hot-toast'
 
 const contactInfo = [
   { icon: EnvelopeIcon, label: 'Email', value: 'support@worksphere.in', href: 'mailto:support@worksphere.in' },
-  { icon: PhoneIcon, label: 'Phone', value: '+91 80-4567-8900', href: 'tel:+918045678900' },
-  { icon: MapPinIcon, label: 'Address', value: 'WorkSphere HQ, HSR Layout, Bangalore 560102, India' },
+  { icon: PhoneIcon, label: 'Phone', value: '+91 11-4567-8900', href: 'tel:+911145678900' },
+  { icon: MapPinIcon, label: 'Address', value: 'WorkSphere HQ, Connaught Place, New Delhi 110001, India' },
   { icon: ClockIcon, label: 'Business Hours', value: 'Mon-Sat: 9:00 AM - 7:00 PM IST' },
 ]
 
@@ -33,7 +33,7 @@ export default function ContactPage() {
     await new Promise(r => setTimeout(r, 1200))
     setSubmitted(true)
     setSending(false)
-    toast.success('Message sent successfully! 🎉')
+    toast.success('Message sent successfully!')
   }
 
   if (submitted) {
@@ -100,7 +100,7 @@ export default function ContactPage() {
               <div className="bg-gradient-to-br from-primary-600 to-primary-800 rounded-2xl p-6 text-white">
                 <h3 className="font-semibold mb-2">Need Urgent Help?</h3>
                 <p className="text-primary-100 text-sm mb-4">Our support team is available for critical issues.</p>
-                <a href="tel:+918045678900" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 rounded-lg px-4 py-2 text-sm font-medium transition-colors">
+                <a href="tel:+911145678900" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 rounded-lg px-4 py-2 text-sm font-medium transition-colors">
                   <PhoneIcon className="w-4 h-4" /> Call Now
                 </a>
               </div>

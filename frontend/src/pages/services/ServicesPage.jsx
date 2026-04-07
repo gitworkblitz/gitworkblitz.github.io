@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { getAllServices } from '../../services/firestoreService'
-import { dummyServices, SERVICE_CATEGORIES, formatCurrencyINR } from '../../utils/dummyData'
+import { useDataCache } from '../../context/DataCacheContext'
+import { SERVICE_CATEGORIES, formatCurrencyINR } from '../../utils/dummyData'
 import ServiceCard from '../../components/ServiceCard'
-import { MagnifyingGlassIcon, AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline'
+import { CardGridSkeleton } from '../../components/SkeletonLoader'
+import ErrorState from '../../components/ErrorState'
+import EmptyState from '../../components/EmptyState'
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 
 const SORT_OPTIONS = [
   { label: 'Relevance', value: 'relevance' },
@@ -14,23 +17,10 @@ const SORT_OPTIONS = [
 ]
 
 export default function ServicesPage() {
-  const [services, setServices] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { services, loaded, error, refreshCache } = useDataCache()
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
   const [sortBy, setSortBy] = useState('relevance')
-
-  useEffect(() => { loadServices() }, [])
-
-  const loadServices = async () => {
-    setLoading(true)
-    try {
-      const data = await getAllServices()
-      setServices(data.length > 0 ? data : dummyServices)
-    } catch {
-      setServices(dummyServices)
-    } finally { setLoading(false) }
-  }
 
   const filtered = useMemo(() => {
     let result = services.filter(s => {
@@ -39,7 +29,6 @@ export default function ServicesPage() {
       return matchSearch && matchCat
     })
 
-    // Sort
     switch (sortBy) {
       case 'price_asc': result.sort((a, b) => (a.price || 0) - (b.price || 0)); break
       case 'price_desc': result.sort((a, b) => (b.price || 0) - (a.price || 0)); break
@@ -85,16 +74,18 @@ export default function ServicesPage() {
 
       <p className="text-sm text-gray-400 dark:text-gray-500 mb-5">{filtered.length} service{filtered.length !== 1 ? 's' : ''} found</p>
 
-      {loading ? (
-        <div className="flex justify-center py-20">
-          <div className="w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
-        </div>
+      {!loaded ? (
+        <CardGridSkeleton count={6} />
+      ) : error ? (
+        <ErrorState title="Failed to load services" message={error} onRetry={refreshCache} />
       ) : filtered.length === 0 ? (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100 dark:border-gray-800 p-12 text-center">
-          <p className="text-4xl mb-3">🔍</p>
-          <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">No services found</p>
-          <p className="text-gray-400 dark:text-gray-500 text-sm">Try adjusting your search or filters</p>
-        </div>
+        <EmptyState
+          icon={MagnifyingGlassIcon}
+          title="No services found"
+          description="Try adjusting your search or filters"
+          actionLabel="Post a Service"
+          actionTo="/services/create"
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map(s => <ServiceCard key={s.id} service={s} />)}

@@ -14,7 +14,7 @@ const firebaseConfig = {
 
 // Warn in development if keys are missing
 if (!firebaseConfig.apiKey && import.meta.env.DEV) {
-  console.warn('⚠️ Firebase API key missing. Set VITE_FIREBASE_API_KEY in your .env file.')
+  console.warn('[WARNING] Firebase API key missing. Set VITE_FIREBASE_API_KEY in your .env file.')
 }
 
 const app = initializeApp(firebaseConfig)

@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { MagnifyingGlassIcon, PlusIcon, MapPinIcon, CurrencyDollarIcon, FunnelIcon } from '@heroicons/react/24/outline'
 import { useAuth } from '../../context/AuthContext'
-import { getAllJobs } from '../../services/firestoreService'
+import { useDataCache } from '../../context/DataCacheContext'
 import JobCard from '../../components/JobCard'
-import { PageLoader } from '../../components/LoadingSpinner'
+import { CardGridSkeleton } from '../../components/SkeletonLoader'
+import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
-import { dummyJobs } from '../../utils/dummyData'
 
 const TYPES = ['All', 'full_time', 'part_time', 'contract', 'internship', 'remote']
 
@@ -27,27 +27,12 @@ const SALARY_RANGES = [
 
 export default function JobsPage() {
   const { user } = useAuth()
-  const [jobs, setJobs] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { jobs, loaded, error, refreshCache } = useDataCache()
   const [search, setSearch] = useState('')
   const [type, setType] = useState('All')
   const [location, setLocation] = useState('All Locations')
   const [salaryRange, setSalaryRange] = useState(0)
   const [showFilters, setShowFilters] = useState(false)
-
-  useEffect(() => {
-    loadJobs()
-  }, [])
-
-  const loadJobs = async () => {
-    setLoading(true)
-    try {
-      const data = await getAllJobs()
-      setJobs(data.length > 0 ? data : dummyJobs)
-    } catch {
-      setJobs(dummyJobs)
-    } finally { setLoading(false) }
-  }
 
   const filtered = useMemo(() => {
     const range = SALARY_RANGES[salaryRange]
@@ -62,8 +47,6 @@ export default function JobsPage() {
   }, [jobs, search, type, location, salaryRange])
 
   const activeFilterCount = [type !== 'All', location !== 'All Locations', salaryRange !== 0].filter(Boolean).length
-
-  if (loading) return <PageLoader text="Loading jobs…" />
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-8">
@@ -107,7 +90,6 @@ export default function JobsPage() {
         {showFilters && (
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-5 mb-6 animate-slide-up">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Location Filter */}
               <div>
                 <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <MapPinIcon className="w-4 h-4" /> Location
@@ -116,8 +98,6 @@ export default function JobsPage() {
                   {LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}
                 </select>
               </div>
-
-              {/* Salary Range Filter */}
               <div>
                 <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <CurrencyDollarIcon className="w-4 h-4" /> Salary Range
@@ -127,7 +107,6 @@ export default function JobsPage() {
                 </select>
               </div>
             </div>
-
             {activeFilterCount > 0 && (
               <button
                 onClick={() => { setLocation('All Locations'); setSalaryRange(0); setType('All') }}
@@ -141,10 +120,15 @@ export default function JobsPage() {
         {/* Results count */}
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">{filtered.length} job{filtered.length !== 1 ? 's' : ''} found</p>
 
-        {filtered.length > 0
-          ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{filtered.map(j => <JobCard key={j.id} job={j} />)}</div>
-          : <EmptyState icon={MagnifyingGlassIcon} title="No jobs found" description="Try adjusting your search filters" actionLabel={user ? "Post a Job" : "Sign up to post"} actionTo={user ? "/jobs/create" : "/signup"} />
-        }
+        {!loaded ? (
+          <CardGridSkeleton count={6} />
+        ) : error ? (
+          <ErrorState title="Failed to load jobs" message={error} onRetry={refreshCache} />
+        ) : filtered.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{filtered.map(j => <JobCard key={j.id} job={j} />)}</div>
+        ) : (
+          <EmptyState icon={MagnifyingGlassIcon} title="No jobs found" description="Try adjusting your search filters" actionLabel={user ? "Post a Job" : "Sign up to post"} actionTo={user ? "/jobs/create" : "/signup"} />
+        )}
       </div>
     </div>
   )

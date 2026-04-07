@@ -7,10 +7,15 @@ export default function ProtectedRoute({ children, adminOnly = false, allowedRol
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-gray-500 font-medium">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+            <div className="w-6 h-6 border-[3px] border-primary-600 border-t-transparent rounded-full animate-spin" />
+          </div>
+          <div className="space-y-2 text-center">
+            <div className="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mx-auto" />
+            <div className="h-2 w-16 bg-gray-100 dark:bg-gray-800 rounded animate-pulse mx-auto" />
+          </div>
         </div>
       </div>
     )

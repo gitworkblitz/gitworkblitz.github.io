@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getUserInvoices } from '../../services/firestoreService'
 import { formatCurrencyINR } from '../../utils/dummyData'
+import { TableSkeleton } from '../../components/SkeletonLoader'
 import { DocumentTextIcon } from '@heroicons/react/24/outline'
 
 export default function InvoicesPage() {
@@ -24,7 +25,7 @@ export default function InvoicesPage() {
     } finally { setLoading(false) }
   }
 
-  if (loading) return <div className="min-h-[60vh] flex items-center justify-center"><div className="w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" /></div>
+  if (loading) return <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8"><TableSkeleton rows={3} /></div>
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">

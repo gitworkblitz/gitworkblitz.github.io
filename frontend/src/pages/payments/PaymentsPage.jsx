@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getUserBookings, simulatePayment, generateInvoice, updateBookingStatus } from '../../services/firestoreService'
 import { BOOKING_STATUSES, formatCurrencyINR } from '../../utils/dummyData'
+import { TableSkeleton } from '../../components/SkeletonLoader'
 import toast from 'react-hot-toast'
 import { CurrencyRupeeIcon, CheckCircleIcon, ClockIcon, CalendarIcon } from '@heroicons/react/24/outline'
 
@@ -33,7 +34,7 @@ export default function PaymentsPage() {
     try {
       await simulatePayment(booking.id, booking.amount || booking.price || 0, user.uid)
       await generateInvoice(booking.id, booking)
-      toast.success('Payment successful! Invoice generated ✅')
+      toast.success('Payment successful! Invoice generated')
       await loadBookings()
     } catch (err) {
       toast.error('Payment failed')
@@ -47,8 +48,8 @@ export default function PaymentsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+        <TableSkeleton rows={4} />
       </div>
     )
   }
@@ -107,8 +108,8 @@ export default function PaymentsPage() {
             {pendingPayment.map(b => (
               <div key={b.id} className="bg-white rounded-xl shadow-card border border-gray-100 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-yellow-50 rounded-xl flex items-center justify-center text-2xl">
-                    {b.image_emoji || '📋'}
+                  <div className="w-12 h-12 bg-yellow-50 rounded-xl flex items-center justify-center">
+                    <CurrencyRupeeIcon className="w-6 h-6 text-yellow-600" />
                   </div>
                   <div>
                     <p className="font-semibold text-gray-900">{b.service_title || 'Service'}</p>

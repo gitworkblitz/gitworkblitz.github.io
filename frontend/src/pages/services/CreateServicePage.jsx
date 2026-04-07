@@ -29,9 +29,8 @@ export default function CreateServicePage() {
         location: data.location,
         worker_id: user.uid,
         worker_name: userProfile?.name || user.displayName || user.email,
-        image_emoji: SERVICE_CATEGORIES.find(c => c.value === data.category)?.emoji || '🔧',
       })
-      toast.success('Service created successfully! 🎉')
+      toast.success('Service created successfully!')
       navigate('/services')
     } catch (e) {
       console.error('Create service error:', e)
@@ -60,20 +59,20 @@ export default function CreateServicePage() {
               <select {...register('category', { required: 'Category is required' })} className="input-field">
                 <option value="">Select category</option>
                 {SERVICE_CATEGORIES.map(c => (
-                  <option key={c.value} value={c.value}>{c.emoji} {c.label}</option>
+                  <option key={c.value} value={c.value}>{c.label}</option>
                 ))}
               </select>
               {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category.message}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
-              <textarea {...register('description', { required: 'Description is required' })} rows={4} className="input-field" placeholder="Describe your service in detail…" />
+              <textarea {...register('description', { required: 'Description is required' })} rows={4} className="input-field" placeholder="Describe your service in detail..." />
               {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description.message}</p>}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Price (₹)</label>
-                <input {...register('price', { required: 'Price is required', min: { value: 1, message: 'Min ₹1' } })} type="number" className="input-field" placeholder="500" />
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Price</label>
+                <input {...register('price', { required: 'Price is required', min: { value: 1, message: 'Min Rs.1' } })} type="number" className="input-field" placeholder="500" />
                 {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}
               </div>
               <div>
@@ -84,13 +83,13 @@ export default function CreateServicePage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Service Location / Area</label>
-              <input {...register('location', { required: 'Location is required' })} className="input-field" placeholder="e.g. Bandra, Mumbai" />
+              <input {...register('location', { required: 'Location is required' })} className="input-field" placeholder="e.g. Connaught Place, Delhi" />
               {errors.location && <p className="text-red-500 text-xs mt-1">{errors.location.message}</p>}
             </div>
             <div className="flex gap-3 pt-2">
               <button type="button" onClick={() => navigate(-1)} className="btn-secondary flex-1">Cancel</button>
               <button type="submit" disabled={loading} className="btn-primary flex-1">
-                {loading ? 'Creating…' : 'Create Service'}
+                {loading ? 'Creating...' : 'Create Service'}
               </button>
             </div>
           </form>

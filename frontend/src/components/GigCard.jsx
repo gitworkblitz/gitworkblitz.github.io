@@ -25,7 +25,7 @@ export default function GigCard({ gig }) {
     try {
       await acceptGig(gig.id, user.uid, userProfile?.name || 'User')
       setAccepted(true)
-      toast.success('🎉 Gig accepted! It\'s yours now.')
+      toast.success('Gig accepted! It is yours now.')
     } catch (err) {
       toast.error(err.message || 'Failed to accept gig')
     } finally { setAccepting(false) }
