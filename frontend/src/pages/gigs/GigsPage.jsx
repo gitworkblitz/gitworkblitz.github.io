@@ -11,17 +11,13 @@ import EmptyState from '../../components/EmptyState'
 
 const CATEGORIES = [
   { label: 'All', value: 'All' },
-  { label: 'Web Dev', value: 'Web Development' },
-  { label: 'Mobile', value: 'Mobile Development' },
-  { label: 'UI/UX', value: 'UI/UX Design' },
-  { label: 'Graphics', value: 'Graphic Design' },
-  { label: 'Writing', value: 'Content Writing' },
-  { label: 'Marketing', value: 'Digital Marketing' },
-  { label: 'Video', value: 'Video Editing' },
-  { label: 'Photo', value: 'Photography' },
-  { label: 'Data Entry', value: 'Data Entry' },
-  { label: 'QA Testing', value: 'QA Testing' },
-  { label: 'Consulting', value: 'Consulting' },
+  { label: 'Web Development', value: 'Web Development' },
+  { label: 'App Development', value: 'App Development' },
+  { label: 'AI/ML', value: 'AI/ML' },
+  { label: 'Python', value: 'Python' },
+  { label: 'Digital Marketing', value: 'Digital Marketing' },
+  { label: 'UI/UX Design', value: 'UI/UX Design' },
+  { label: 'Data Science', value: 'Data Science' },
 ]
 
 const BUDGET_RANGES = [
@@ -39,6 +35,7 @@ export default function GigsPage() {
   const debouncedSearch = useDebounce(search, 300)
   const [category, setCategory] = useState('All')
   const [budgetRange, setBudgetRange] = useState(0)
+  const [visibleCount, setVisibleCount] = useState(12)
 
   const filtered = useMemo(() => {
     const range = BUDGET_RANGES[budgetRange]
@@ -92,7 +89,7 @@ export default function GigsPage() {
         <div className="flex flex-wrap gap-2 mb-6">
           {CATEGORIES.map(c => (
             <button key={c.value}
-              onClick={() => setCategory(c.value)}
+              onClick={() => { setCategory(c.value); setVisibleCount(12); }}
               className={`text-sm px-4 py-2 rounded-full font-medium transition-all duration-200 ${
                 category === c.value
                   ? 'bg-violet-600 text-white shadow-md shadow-violet-200 dark:shadow-violet-900/30'
@@ -110,7 +107,21 @@ export default function GigsPage() {
         ) : error ? (
           <ErrorState title="Failed to load gigs" message={error} onRetry={refreshCache} />
         ) : filtered.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{filtered.map(g => <GigCard key={g.id} gig={g} />)}</div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filtered.slice(0, visibleCount).map(g => <GigCard key={g.id} gig={g} />)}
+            </div>
+            {visibleCount < filtered.length && (
+              <div className="mt-10 mb-4 flex justify-center">
+                <button
+                  onClick={() => setVisibleCount(c => c + 12)}
+                  className="px-8 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow transition-all"
+                >
+                  Load More Gigs
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <EmptyState icon={MagnifyingGlassIcon} title="No gigs found" description="Try adjusting your search or category" actionLabel="Post a Gig" actionTo="/gigs/create" />
         )}

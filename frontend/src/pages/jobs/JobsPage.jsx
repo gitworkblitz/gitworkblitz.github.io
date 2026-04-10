@@ -11,6 +11,17 @@ import EmptyState from '../../components/EmptyState'
 
 const TYPES = ['All', 'full_time', 'part_time', 'contract', 'internship', 'remote']
 
+const CATEGORIES = [
+  { label: 'All', value: 'All' },
+  { label: 'Web Development', value: 'Web Development' },
+  { label: 'App Development', value: 'App Development' },
+  { label: 'AI/ML', value: 'AI/ML' },
+  { label: 'Python', value: 'Python' },
+  { label: 'Digital Marketing', value: 'Digital Marketing' },
+  { label: 'UI/UX Design', value: 'UI/UX Design' },
+  { label: 'Data Science', value: 'Data Science' },
+]
+
 const LOCATIONS = [
   'All Locations', 'Connaught Place', 'Hauz Khas', 'Noida Sector 62',
   'Khan Market', 'Gurgaon Cyber City', 'Noida Sector 15', 'Defence Colony',
@@ -36,19 +47,22 @@ export default function JobsPage() {
   const [salaryRange, setSalaryRange] = useState(0)
   const [experience, setExperience] = useState('All Experience')
   const [showFilters, setShowFilters] = useState(false)
+  const [category, setCategory] = useState('All')
+  const [visibleCount, setVisibleCount] = useState(12)
 
   const filtered = useMemo(() => {
     const range = SALARY_RANGES[salaryRange]
     return jobs.filter(j => {
       const matchSearch = !debouncedSearch || j.title?.toLowerCase().includes(debouncedSearch.toLowerCase()) || j.company?.toLowerCase().includes(debouncedSearch.toLowerCase())
       const matchType = type === 'All' || j.employment_type === type || j.type?.toLowerCase().replace(/[\s-]/g, '_') === type
+      const matchCat = category === 'All' || j.category === category
       const matchLocation = location === 'All Locations' || j.location === location
       const matchSalary = (j.salary_min || 0) >= range.min && (j.salary_min || 0) <= range.max ||
                           (j.salary_max || 0) >= range.min && (j.salary_max || 0) <= range.max
       const matchExperience = experience === 'All Experience' || j.experience_required === experience
-      return matchSearch && matchType && matchLocation && matchSalary && matchExperience
+      return matchSearch && matchType && matchCat && matchLocation && matchSalary && matchExperience
     })
-  }, [jobs, debouncedSearch, type, location, salaryRange, experience])
+  }, [jobs, debouncedSearch, type, category, location, salaryRange, experience])
 
   const activeFilterCount = [type !== 'All', location !== 'All Locations', salaryRange !== 0, experience !== 'All Experience'].filter(Boolean).length
 
@@ -88,6 +102,21 @@ export default function JobsPage() {
               )}
             </button>
           </div>
+        </div>
+
+        {/* Categories Pill Bar */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {CATEGORIES.map(c => (
+            <button key={c.value}
+              onClick={() => { setCategory(c.value); setVisibleCount(12); }}
+              className={`text-sm px-4 py-2 rounded-full font-medium transition-all duration-200 ${
+                category === c.value
+                  ? 'bg-primary-600 text-white shadow-md shadow-primary-200 dark:shadow-primary-900/30'
+                  : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-primary-300 hover:text-primary-700 dark:hover:text-primary-300'
+              }`}>
+              {c.label}
+            </button>
+          ))}
         </div>
 
         {/* Advanced Filters */}
@@ -137,7 +166,21 @@ export default function JobsPage() {
         ) : error ? (
           <ErrorState title="Failed to load jobs" message={error} onRetry={refreshCache} />
         ) : filtered.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{filtered.map(j => <JobCard key={j.id} job={j} />)}</div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filtered.slice(0, visibleCount).map(j => <JobCard key={j.id} job={j} />)}
+            </div>
+            {visibleCount < filtered.length && (
+              <div className="mt-10 mb-4 flex justify-center">
+                <button
+                  onClick={() => setVisibleCount(c => c + 12)}
+                  className="px-8 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow transition-all"
+                >
+                  Load More Jobs
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <EmptyState icon={MagnifyingGlassIcon} title="No jobs found" description="Try adjusting your search filters" actionLabel={user ? "Post a Job" : "Sign up to post"} actionTo={user ? "/jobs/create" : "/signup"} />
         )}

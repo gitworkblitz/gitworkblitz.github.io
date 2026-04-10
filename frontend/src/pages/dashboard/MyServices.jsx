@@ -20,7 +20,7 @@ export default function MyServices() {
     setError(null)
     try {
       const data = await queryDocuments('services', 'worker_id', '==', user.uid)
-      setServices(data.length > 0 ? data : dummyServices.slice(0, 2))
+      setServices(data.length > 0 ? data : dummyServices)
     } catch (err) {
       console.error(err)
       setError('Failed to load services')
@@ -32,7 +32,7 @@ export default function MyServices() {
 
   useEffect(() => { if (user) loadServices() }, [user, loadServices])
 
-  if (loading) return <TableSkeleton rows={4} />
+  // if (loading) return <TableSkeleton rows={4} />
   if (error) return <ErrorState title="Error Loading Services" message={error} onRetry={loadServices} />
 
   return (

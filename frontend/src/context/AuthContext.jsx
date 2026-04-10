@@ -139,7 +139,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={contextValue}>
-      {loading ? <PageSkeleton /> : children}
+      {children}
     </AuthContext.Provider>
   )
 }

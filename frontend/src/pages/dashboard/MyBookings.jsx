@@ -64,7 +64,7 @@ export default function MyBookings() {
     }
   }
 
-  if (loading) return <TableSkeleton rows={5} />
+  // if (loading) return <TableSkeleton rows={5} />
   if (error) return <ErrorState title="Error Loading Bookings" message={error} onRetry={loadBookings} />
 
   // Worker sees all their assigned bookings; customers see bookings they made

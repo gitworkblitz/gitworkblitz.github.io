@@ -20,7 +20,7 @@ export default function MyGigs() {
     setError(null)
     try {
       const data = await queryDocuments('gigs', 'employer_id', '==', user.uid)
-      const gigList = data.length > 0 ? data : dummyGigs.slice(0, 2)
+      const gigList = data.length > 0 ? data : dummyGigs
       setGigs(gigList)
 
       // Batch fetch all applicant counts for this employer in ONE query (removes N+1 delay)
@@ -41,7 +41,7 @@ export default function MyGigs() {
 
   useEffect(() => { if (user) loadGigs() }, [user, loadGigs])
 
-  if (loading) return <TableSkeleton rows={4} />
+  // if (loading) return <TableSkeleton rows={4} />
   if (error) return <ErrorState title="Error Loading Gigs" message={error} onRetry={loadGigs} />
 
   return (

@@ -14,54 +14,55 @@ import AdminLayout from './layout/AdminLayout'
 import ProtectedRoute from './routes/ProtectedRoute'
 import ScrollToTop from './components/ScrollToTop'
 import { PageSkeleton } from './components/SkeletonLoader'
+import HomePage from './pages/home/HomePage'
 
-// Lazy load all pages
-const LoginPage = lazy(() => import('./pages/auth/LoginPage'))
-const SignupPage = lazy(() => import('./pages/auth/SignupPage'))
-const HomePage = lazy(() => import('./pages/home/HomePage'))
-const ServicesPage = lazy(() => import('./pages/services/ServicesPage'))
-const ServiceDetailPage = lazy(() => import('./pages/services/ServiceDetailPage'))
-const JobsPage = lazy(() => import('./pages/jobs/JobsPage'))
-const JobDetailsPage = lazy(() => import('./pages/jobs/JobDetailsPage'))
-const JobApplicantsPage = lazy(() => import('./pages/jobs/JobApplicantsPage'))
-const GigsPage = lazy(() => import('./pages/gigs/GigsPage'))
-const GigDetailsPage = lazy(() => import('./pages/gigs/GigDetailsPage'))
-const GigApplicantsPage = lazy(() => import('./pages/gigs/GigApplicantsPage'))
-const FindWorkersPage = lazy(() => import('./pages/workers/FindWorkersPage'))
-const WorkerProfilePage = lazy(() => import('./pages/workers/WorkerProfilePage'))
-const AboutPage = lazy(() => import('./pages/about/AboutPage'))
-const ContactPage = lazy(() => import('./pages/contact/ContactPage'))
-const PrivacyPolicyPage = lazy(() => import('./pages/legal/PrivacyPolicyPage'))
-const TermsPage = lazy(() => import('./pages/legal/TermsPage'))
-const HelpCenterPage = lazy(() => import('./pages/support/HelpCenterPage'))
-const FAQPage = lazy(() => import('./pages/support/FAQPage'))
-const ReportIssuePage = lazy(() => import('./pages/support/ReportIssuePage'))
-const FeedbackPage = lazy(() => import('./pages/support/FeedbackPage'))
-const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'))
-const MyBookings = lazy(() => import('./pages/dashboard/MyBookings'))
-const MyServices = lazy(() => import('./pages/dashboard/MyServices'))
-const MyJobs = lazy(() => import('./pages/dashboard/MyJobs'))
-const MyGigs = lazy(() => import('./pages/dashboard/MyGigs'))
-const CreateServicePage = lazy(() => import('./pages/services/CreateServicePage'))
-const CreateJobPage = lazy(() => import('./pages/jobs/CreateJobPage'))
-const CreateGigPage = lazy(() => import('./pages/gigs/CreateGigPage'))
-const BookingsPage = lazy(() => import('./pages/bookings/BookingsPage'))
-const BookingDetailPage = lazy(() => import('./pages/bookings/BookingDetailPage'))
-const ProfilePage = lazy(() => import('./pages/profile/ProfilePage'))
-const PaymentsPage = lazy(() => import('./pages/payments/PaymentsPage'))
-const InvoicesPage = lazy(() => import('./pages/invoices/InvoicesPage'))
-const InvoiceViewPage = lazy(() => import('./pages/invoices/InvoiceViewPage'))
-const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
-const ManageUsers = lazy(() => import('./pages/admin/ManageUsers'))
-const ManageServices = lazy(() => import('./pages/admin/ManageServices'))
-const ManageBookings = lazy(() => import('./pages/admin/ManageBookings'))
-const ManageJobs = lazy(() => import('./pages/admin/ManageJobs'))
-const ManageGigs = lazy(() => import('./pages/admin/ManageGigs'))
-const ManageReviews = lazy(() => import('./pages/admin/ManageReviews'))
-const ManageReports = lazy(() => import('./pages/admin/ManageReports'))
-const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'))
-const Chatbot = lazy(() => import('./components/Chatbot'))
-const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
+// Load core pages directly for instant navigation
+import LoginPage from './pages/auth/LoginPage'
+import SignupPage from './pages/auth/SignupPage'
+import ServicesPage from './pages/services/ServicesPage'
+import ServiceDetailPage from './pages/services/ServiceDetailPage'
+import JobsPage from './pages/jobs/JobsPage'
+import JobDetailsPage from './pages/jobs/JobDetailsPage'
+import JobApplicantsPage from './pages/jobs/JobApplicantsPage'
+import GigsPage from './pages/gigs/GigsPage'
+import GigDetailsPage from './pages/gigs/GigDetailsPage'
+import GigApplicantsPage from './pages/gigs/GigApplicantsPage'
+import FindWorkersPage from './pages/workers/FindWorkersPage'
+import WorkerProfilePage from './pages/workers/WorkerProfilePage'
+import DashboardPage from './pages/dashboard/DashboardPage'
+import MyBookings from './pages/dashboard/MyBookings'
+import MyServices from './pages/dashboard/MyServices'
+import MyJobs from './pages/dashboard/MyJobs'
+import MyGigs from './pages/dashboard/MyGigs'
+
+import AboutPage from './pages/about/AboutPage'
+import ContactPage from './pages/contact/ContactPage'
+import PrivacyPolicyPage from './pages/legal/PrivacyPolicyPage'
+import TermsPage from './pages/legal/TermsPage'
+import HelpCenterPage from './pages/support/HelpCenterPage'
+import FAQPage from './pages/support/FAQPage'
+import ReportIssuePage from './pages/support/ReportIssuePage'
+import FeedbackPage from './pages/support/FeedbackPage'
+import CreateServicePage from './pages/services/CreateServicePage'
+import CreateJobPage from './pages/jobs/CreateJobPage'
+import CreateGigPage from './pages/gigs/CreateGigPage'
+import BookingsPage from './pages/bookings/BookingsPage'
+import BookingDetailPage from './pages/bookings/BookingDetailPage'
+import ProfilePage from './pages/profile/ProfilePage'
+import PaymentsPage from './pages/payments/PaymentsPage'
+import InvoicesPage from './pages/invoices/InvoicesPage'
+import InvoiceViewPage from './pages/invoices/InvoiceViewPage'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import ManageUsers from './pages/admin/ManageUsers'
+import ManageServices from './pages/admin/ManageServices'
+import ManageBookings from './pages/admin/ManageBookings'
+import ManageJobs from './pages/admin/ManageJobs'
+import ManageGigs from './pages/admin/ManageGigs'
+import ManageReviews from './pages/admin/ManageReviews'
+import ManageReports from './pages/admin/ManageReports'
+import AdminSettings from './pages/admin/AdminSettings'
+import Chatbot from './components/Chatbot'
+import NotFoundPage from './pages/NotFoundPage'
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30000 } } })
 

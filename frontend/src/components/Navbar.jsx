@@ -18,7 +18,7 @@ const publicLinks = [
 ]
 
 export default function Navbar() {
-  const { user, userProfile, logout } = useAuth()
+  const { user, userProfile, loading, logout } = useAuth()
   const { darkMode, toggleTheme } = useTheme()
   const navigate = useNavigate()
   const location = useLocation()
@@ -72,7 +72,12 @@ export default function Navbar() {
               {darkMode ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
             </button>
 
-            {user ? (
+            {loading ? (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+                <div className="w-20 h-8 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+              </div>
+            ) : user ? (
               <div className="flex items-center gap-2">
                 <NotificationBell />
 
@@ -99,7 +104,7 @@ export default function Navbar() {
                     <Menu.Items className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 py-1.5 focus:outline-none">
                       <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-700">
                         <p className="text-sm font-semibold text-gray-900 dark:text-white">{userProfile?.name || 'User'}</p>
-                        <p className="text-xs text-gray-400 capitalize">{userProfile?.user_type} &middot; {user.email}</p>
+                        <p className="text-xs text-gray-400 capitalize">{userProfile?.user_type} &middot; {user?.email}</p>
                       </div>
 
                       <Menu.Item>{({ active }) => (
@@ -173,7 +178,15 @@ export default function Navbar() {
             ))}
 
             <div className="border-t border-gray-100 dark:border-gray-800 my-2 pt-2">
-              {user ? (
+              {loading ? (
+                <div className="flex items-center gap-3 px-4 py-3 mb-2 animate-pulse">
+                  <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
+                  </div>
+                </div>
+              ) : user ? (
                 <>
                   <div className="flex items-center gap-3 px-4 py-3 mb-2">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white font-bold">

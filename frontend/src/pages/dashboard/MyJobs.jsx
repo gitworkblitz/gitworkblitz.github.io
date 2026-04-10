@@ -21,7 +21,7 @@ export default function MyJobs() {
     setError(null)
     try {
       const data = await queryDocuments('jobs', 'employer_id', '==', user.uid)
-      const jobList = data.length > 0 ? data : dummyJobs.slice(0, 2)
+      const jobList = data.length > 0 ? data : dummyJobs
       setJobs(jobList)
 
       // Batch fetch all applicant counts for this employer in ONE query (removes N+1 delay)
@@ -42,7 +42,7 @@ export default function MyJobs() {
 
   useEffect(() => { if (user) loadJobs() }, [user, loadJobs])
 
-  if (loading) return <TableSkeleton rows={4} />
+  // if (loading) return <TableSkeleton rows={4} />
   if (error) return <ErrorState title="Error Loading Jobs" message={error} onRetry={loadJobs} />
 
   return (
