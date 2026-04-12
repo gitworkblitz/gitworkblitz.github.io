@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { getDocument, getBookingInvoice } from '../../services/firestoreService'
+import { getDocument } from '../../services/firestoreService'
 import { formatCurrencyINR } from '../../utils/dummyData'
 import { DetailSkeleton } from '../../components/SkeletonLoader'
-import { ArrowDownTrayIcon, PrinterIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { ArrowDownTrayIcon, PrinterIcon, ArrowLeftIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
 import { CheckCircleIcon } from '@heroicons/react/24/solid'
 
 export default function InvoiceViewPage() {
   const { id } = useParams()
   const [invoice, setInvoice] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [downloading, setDownloading] = useState(false)
+  const invoiceRef = useRef(null)
 
   useEffect(() => { loadInvoice() }, [id])
 
@@ -23,24 +25,39 @@ export default function InvoiceViewPage() {
     } finally { setLoading(false) }
   }
 
-  const handleDownload = () => {
-    // Add print-specific CSS and trigger print (browser saves as PDF)
-    const printCSS = document.createElement('style')
-    printCSS.id = 'invoice-print-style'
-    printCSS.textContent = `
-      @media print {
-        body * { visibility: hidden; }
-        #invoice-document, #invoice-document * { visibility: visible; }
-        #invoice-document { position: fixed; left: 0; top: 0; width: 100%; }
-        .print\\:hidden { display: none !important; }
-      }
-    `
-    document.head.appendChild(printCSS)
+  const handleDownload = async () => {
+    setDownloading(true)
+    try {
+      const element = invoiceRef.current
+      if (!element) return
+
+      const printCSS = document.createElement('style')
+      printCSS.id = 'invoice-print-style'
+      printCSS.textContent = `
+        @media print {
+          body * { visibility: hidden; }
+          #invoice-print-area, #invoice-print-area * { visibility: visible; }
+          #invoice-print-area { position: fixed; left: 0; top: 0; width: 100%; background: white !important; }
+          .no-print { display: none !important; }
+        }
+      `
+      document.head.appendChild(printCSS)
+      
+      window.print()
+      
+      setTimeout(() => {
+        const el = document.getElementById('invoice-print-style')
+        if (el) el.remove()
+      }, 1000)
+    } catch (err) {
+      console.error('Download error:', err)
+    } finally {
+      setDownloading(false)
+    }
+  }
+
+  const handlePrint = () => {
     window.print()
-    setTimeout(() => {
-      const el = document.getElementById('invoice-print-style')
-      if (el) el.remove()
-    }, 1000)
   }
 
   if (loading) return <DetailSkeleton />
@@ -48,9 +65,14 @@ export default function InvoiceViewPage() {
   if (!invoice) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Invoice Not Found</h2>
+        <div className="w-20 h-20 mx-auto mb-6 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+          <DocumentTextIcon className="w-10 h-10 text-gray-400" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Invoice Not Found</h2>
         <p className="text-gray-500 mb-6">This invoice doesn't exist or you don't have access.</p>
-        <Link to="/invoices" className="btn-primary">Go to Invoices</Link>
+        <Link to="/invoices" className="btn-primary inline-flex items-center gap-2">
+          <ArrowLeftIcon className="w-4 h-4" /> Go to Invoices
+        </Link>
       </div>
     )
   }
@@ -59,33 +81,41 @@ export default function InvoiceViewPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
-      {/* Actions bar */}
-      <div className="flex items-center justify-between mb-6 print:hidden">
+      <div className="flex items-center justify-between mb-6 no-print">
         <Link
           to="/invoices"
-          className="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium transition-colors"
+          className="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium transition-colors group"
         >
-          <ArrowLeftIcon className="w-4 h-4" /> Back to Invoices
+          <ArrowLeftIcon className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          Back to Invoices
         </Link>
         <div className="flex gap-2">
           <button
-            onClick={() => window.print()}
-            className="btn-secondary text-sm flex items-center gap-1.5 print:hidden"
+            onClick={handlePrint}
+            className="btn-secondary text-sm flex items-center gap-1.5"
           >
             <PrinterIcon className="w-4 h-4" /> Print
           </button>
           <button
             onClick={handleDownload}
-            className="btn-primary text-sm flex items-center gap-1.5 print:hidden"
+            disabled={downloading}
+            className="btn-primary text-sm flex items-center gap-1.5"
           >
-            <ArrowDownTrayIcon className="w-4 h-4" /> Download PDF
+            {downloading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Saving…
+              </>
+            ) : (
+              <>
+                <ArrowDownTrayIcon className="w-4 h-4" /> Download PDF
+              </>
+            )}
           </button>
         </div>
       </div>
 
-      {/* Invoice document */}
-      <div id="invoice-document" className="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden">
-        {/* Header banner */}
+      <div id="invoice-print-area" ref={invoiceRef} className="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden">
         <div className="bg-gradient-to-r from-primary-600 to-primary-800 px-8 py-7">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -105,7 +135,6 @@ export default function InvoiceViewPage() {
         </div>
 
         <div className="p-8">
-          {/* Date, Status, Booking ref */}
           <div className="flex items-start justify-between mb-8 pb-6 border-b border-gray-100">
             <div className="space-y-1">
               <div>
@@ -125,7 +154,6 @@ export default function InvoiceViewPage() {
             </div>
           </div>
 
-          {/* Bill to / Service Provider */}
           <div className="grid grid-cols-2 gap-8 mb-8">
             <div>
               <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Bill To</p>
@@ -139,7 +167,6 @@ export default function InvoiceViewPage() {
             </div>
           </div>
 
-          {/* Service details table */}
           <div className="mb-8">
             <table className="w-full">
               <thead>
@@ -174,7 +201,6 @@ export default function InvoiceViewPage() {
             </table>
           </div>
 
-          {/* Totals */}
           <div className="flex justify-end mb-8">
             <div className="w-72 bg-gray-50 rounded-xl p-4 space-y-2.5">
               <div className="flex justify-between text-sm">
@@ -192,7 +218,6 @@ export default function InvoiceViewPage() {
             </div>
           </div>
 
-          {/* Payment method */}
           <div className="bg-green-50 border border-green-200 rounded-xl px-5 py-4 flex items-center gap-3 mb-8">
             <CheckCircleIcon className="w-6 h-6 text-green-600 flex-shrink-0" />
             <div>
@@ -201,7 +226,6 @@ export default function InvoiceViewPage() {
             </div>
           </div>
 
-          {/* Footer */}
           <div className="pt-6 border-t border-gray-100 text-center">
             <p className="text-sm font-semibold text-gray-700">Thank you for using WorkSphere!</p>
             <p className="text-xs text-gray-400 mt-1">

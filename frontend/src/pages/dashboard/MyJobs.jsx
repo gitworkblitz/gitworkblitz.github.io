@@ -6,6 +6,7 @@ import { dummyJobs } from '../../utils/dummyData'
 import { TableSkeleton } from '../../components/SkeletonLoader'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
+import { ListSkeleton } from '../../components/SkeletonLoader'
 import { BriefcaseIcon, UserGroupIcon, MapPinIcon } from '@heroicons/react/24/outline'
 import { CheckCircleIcon } from '@heroicons/react/24/solid'
 
@@ -42,7 +43,15 @@ export default function MyJobs() {
 
   useEffect(() => { if (user) loadJobs() }, [user, loadJobs])
 
-  // if (loading) return <TableSkeleton rows={4} />
+  if (loading) return (
+    <div>
+      <div className="mb-6">
+        <div className="h-8 w-32 bg-gray-200 dark:bg-gray-700 animate-pulse rounded mb-2"></div>
+        <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 animate-pulse rounded"></div>
+      </div>
+      <ListSkeleton count={4} />
+    </div>
+  )
   if (error) return <ErrorState title="Error Loading Jobs" message={error} onRetry={loadJobs} />
 
   return (

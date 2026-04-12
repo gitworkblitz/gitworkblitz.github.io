@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { queryDocuments } from '../../services/firestoreService'
 import { dummyServices, formatCurrencyINR } from '../../utils/dummyData'
-import { TableSkeleton } from '../../components/SkeletonLoader'
+import { CardGridSkeleton } from '../../components/SkeletonLoader'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import { WrenchScrewdriverIcon, ClockIcon } from '@heroicons/react/24/outline'
@@ -32,7 +32,15 @@ export default function MyServices() {
 
   useEffect(() => { if (user) loadServices() }, [user, loadServices])
 
-  // if (loading) return <TableSkeleton rows={4} />
+  if (loading) return (
+    <div>
+      <div className="mb-6">
+        <div className="h-8 w-32 bg-gray-200 dark:bg-gray-700 animate-pulse rounded mb-2"></div>
+        <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 animate-pulse rounded"></div>
+      </div>
+      <CardGridSkeleton count={4} cols={2} type="service" />
+    </div>
+  )
   if (error) return <ErrorState title="Error Loading Services" message={error} onRetry={loadServices} />
 
   return (

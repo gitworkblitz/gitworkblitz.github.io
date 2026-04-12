@@ -89,7 +89,7 @@ export default function Navbar() {
                 <Menu as="div" className="relative">
                   <Menu.Button className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 transition-all bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                      {(userProfile?.name || 'U')[0].toUpperCase()}
+                      {((userProfile?.name || user?.email || 'U').trim() || 'U')[0].toUpperCase()}
                     </div>
                     <span className="text-sm font-medium max-w-[100px] truncate text-gray-700 dark:text-gray-200">
                       {userProfile?.name?.split(' ')[0] || 'User'}
@@ -190,7 +190,7 @@ export default function Navbar() {
                 <>
                   <div className="flex items-center gap-3 px-4 py-3 mb-2">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white font-bold">
-                      {(userProfile?.name || 'U')[0].toUpperCase()}
+                      {((userProfile?.name || user?.email || 'U').trim() || 'U')[0].toUpperCase()}
                     </div>
                     <div>
                       <p className="font-semibold text-gray-900 dark:text-white text-sm">{userProfile?.name || 'User'}</p>

@@ -1,0 +1,43 @@
+rules_version = '2';
+
+// Craft rules based on the specific structures:
+// resumes/{userId}/{filename}
+// avatars/{userId}/{filename}
+// documents/{userId}/{filename}
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Fallback: Default deny
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+    
+    // Auth requirements
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Resumes (allow read by public for employer downloading, or restrict to employer/admin ideally.
+    // For MVP marketplace scale, allowing public read of resume is typical once UUID matched)
+    match /resumes/{userId}/{fileName} {
+      allow read: if true;
+      allow create, update: if isOwner(userId) 
+                            && request.resource.size < 5 * 1024 * 1024 // 5MB Limit
+                            && request.resource.contentType.matches('application/pdf|application/msword|application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      allow delete: if isOwner(userId);
+    }
+    
+    // Avatars
+    match /avatars/{userId}/{fileName} {
+      allow read: if true;
+      allow create, update: if isOwner(userId)
+                            && request.resource.size < 2 * 1024 * 1024 // 2MB Limit
+                            && request.resource.contentType.matches('image/.*');
+      allow delete: if isOwner(userId);
+    }
+  }
+}

@@ -1,15 +1,25 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useForm } from 'react-hook-form'
 import { UserIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, StarIcon, PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
+import { ProfileSkeleton } from '../../components/SkeletonLoader'
 
 export default function ProfilePage() {
   const { user, userProfile, updateUserProfile } = useAuth()
   const [editing, setEditing] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const [skills, setSkills] = useState(userProfile?.skills || [])
   const [skillInput, setSkillInput] = useState('')
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted || !userProfile) {
+    return <ProfileSkeleton />
+  }
 
   const { register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: { name: userProfile?.name || '', phone: userProfile?.phone || '', location: userProfile?.location || '', bio: userProfile?.bio || '' }

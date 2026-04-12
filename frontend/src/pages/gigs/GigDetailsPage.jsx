@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getGigById, applyToGig, hasUserAppliedToGig, completeGig } from '../../services/firestoreService'
+import { storage } from '../../services/firebase'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { dummyGigs, formatCurrencyINR } from '../../utils/dummyData'
-import { ClockIcon, MapPinIcon, ArrowLeftIcon, CalendarDaysIcon, UserIcon, IdentificationIcon, ShieldCheckIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
+import { ClockIcon, MapPinIcon, ArrowLeftIcon, CalendarDaysIcon, IdentificationIcon, ShieldCheckIcon, DocumentTextIcon, PaperClipIcon } from '@heroicons/react/24/outline'
 import { StarIcon, CheckCircleIcon, ExclamationTriangleIcon, CurrencyRupeeIcon } from '@heroicons/react/24/solid'
 import toast from 'react-hot-toast'
 import { DetailSkeleton } from '../../components/SkeletonLoader'
@@ -22,17 +24,32 @@ export default function GigDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
   const [applied, setApplied] = useState(false)
+  const [showForm, setShowForm] = useState(false)
+  const [applyMode, setApplyMode] = useState('resume')
 
-  useEffect(() => { loadGig() }, [id])
+  // Simple Upwork-style form fields -> Now standard
+  const [formName, setFormName] = useState('')
+  const [formEmail, setFormEmail] = useState('')
+  const [formPhone, setFormPhone] = useState('')
+  const [formExperience, setFormExperience] = useState('')
+  const [formSkills, setFormSkills] = useState('')
+  const [formCoverLetter, setFormCoverLetter] = useState('')
+  const [formBudget, setFormBudget] = useState('')
+  const [formResume, setFormResume] = useState(null)
 
+  // Pre-fill from user profile
   useEffect(() => {
-    if (user && gig?.id) {
-      hasUserAppliedToGig(gig.id, user.uid).then(setApplied).catch(console.error)
+    if (user && userProfile) {
+      setFormName(userProfile.name || user.displayName || '')
+      setFormEmail(user.email || '')
+      setFormPhone(userProfile.phone || '')
+      setFormExperience(userProfile.experience_years?.toString() || '')
+      setFormSkills(userProfile.skills?.join(', ') || '')
     }
-  }, [user, gig?.id])
+  }, [user, userProfile])
 
-  const loadGig = async () => {
-    // 1. Instant Cache
+  const loadGig = useCallback(async () => {
+    // Instant render from dummy cache
     const cached = dummyGigs.find(g => g.id === id)
     if (cached) {
       setGig({ ...cached, status: cached.status || 'open' })
@@ -42,7 +59,7 @@ export default function GigDetailsPage() {
     }
 
     try {
-      let data = await getGigById(id)
+      const data = await getGigById(id)
       if (data) {
         if (!data.status) data.status = 'open'
         setGig(data)
@@ -53,26 +70,75 @@ export default function GigDetailsPage() {
     } catch (err) {
       console.error('Error loading gig:', err)
       if (!cached) { toast.error('Failed to load gig'); navigate('/gigs') }
-    } finally { if (!cached) setLoading(false) }
-  }
+    } finally {
+      setLoading(false)
+    }
+  }, [id, navigate])
 
-  const handleApplyGig = async () => {
+  useEffect(() => { loadGig() }, [loadGig])
+
+  useEffect(() => {
+    if (user && gig?.id) {
+      hasUserAppliedToGig(gig.id, user.uid).then(setApplied).catch(console.error)
+    }
+  }, [user, gig?.id])
+
+  const handleApplyGig = async (e) => {
+    e.preventDefault()
     if (!user) { navigate('/login'); return }
     if (applied) return
+    if (!formName.trim() || !formEmail.trim() || !formPhone.trim()) {
+      toast.error('Please fill in your name, email, and phone')
+      return
+    }
+
+    if (applyMode === 'resume' && !formResume) {
+      toast.error('Please upload your resume for Quick Apply')
+      return
+    }
 
     try {
       setActionLoading(true)
+
+      let resumeURL = null
+      if (formResume) {
+        const fileRef = ref(storage, `resumes/${user.uid}/${Date.now()}_${formResume.name}`)
+        try {
+          const uploadTask = async () => {
+            await uploadBytes(fileRef, formResume)
+            return await getDownloadURL(fileRef)
+          }
+          resumeURL = await Promise.race([
+            uploadTask(),
+            new Promise(resolve => setTimeout(() => resolve(URL.createObjectURL(formResume)), 1500))
+          ])
+        } catch {
+          resumeURL = URL.createObjectURL(formResume)
+        }
+      }
+
       await applyToGig({
         gigId: gig.id,
-        userId: user.uid,
-        userName: userProfile?.name || 'User',
-        applicantName: userProfile?.name || 'User',
-        userEmail: user.email || '',
-        gigTitle: gig.title || '',
+        applicantId: user.uid,
         employerId: gig.employer_id || gig.posted_by || '',
+        name: formName.trim(),
+        email: formEmail.trim(),
+        phone: formPhone.trim(),
+        experience: parseFloat(formExperience) || 0,
+        skills: formSkills.split(',').map(s => s.trim()).filter(Boolean),
+        coverLetter: formCoverLetter.trim(),
+        proposedBudget: parseFloat(formBudget) || null,
+        resumeURL: resumeURL,
+        // Legacy
+        userId: user.uid,
+        userName: formName.trim(),
+        applicantName: formName.trim(),
+        userEmail: formEmail.trim(),
+        gigTitle: gig.title || '',
       })
       toast.success('Applied Successfully ✅')
       setApplied(true)
+      setShowForm(false)
     } catch (e) {
       console.error('Apply gig error:', e)
       if (e.message?.includes('already applied')) {
@@ -121,10 +187,10 @@ export default function GigDetailsPage() {
           <ArrowLeftIcon className="w-4 h-4" /> Back to Gigs
         </Link>
 
-        {/* Upwork style layout: Left column (main content) + Right column (Apply/Client info) */}
+        {/* Upwork-style layout: Left (main) + Right (sidebar) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* Main Content Column */}
+
+          {/* === MAIN CONTENT === */}
           <div className="lg:col-span-8 flex flex-col gap-6">
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 md:p-8">
               <div className="flex items-center justify-between mb-4">
@@ -135,9 +201,9 @@ export default function GigDetailsPage() {
                   {(gig.status || 'open').replace('-', ' ')}
                 </span>
               </div>
-              
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-4 line-clamp-2">{gig.title}</h1>
-              
+
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-4 leading-snug">{gig.title}</h1>
+
               <div className="flex flex-wrap items-center gap-y-2 gap-x-6 text-sm text-gray-500 dark:text-gray-400 mb-8 pb-6 border-b border-gray-100 dark:border-gray-800">
                 <span className="flex items-center gap-1.5 font-medium"><MapPinIcon className="w-4 h-4" /> {gig.location || 'Remote'}</span>
                 <span className="flex items-center gap-1.5 font-medium"><ClockIcon className="w-4 h-4" /> {postedDaysAgo()}</span>
@@ -148,40 +214,182 @@ export default function GigDetailsPage() {
                 <div className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap break-words">{gig.description}</div>
               </div>
 
-              {/* Grid of Key Features */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8 pt-6 border-t border-gray-100 dark:border-gray-800">
-                  <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700/50">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium flex items-center gap-1"><CurrencyRupeeIcon className="w-4 h-4" /> Budget</p>
-                    <p className="font-bold text-gray-900 dark:text-white text-lg">{formatCurrencyINR(Number(gig.price || gig.budget || 0))}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Fixed-price</p>
-                  </div>
-                  <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700/50">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium flex items-center gap-1"><ClockIcon className="w-4 h-4" /> Duration</p>
-                    <p className="font-bold text-gray-900 dark:text-white text-lg">{gig.duration || 'Not specified'}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Estimated time</p>
-                  </div>
-                  <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700/50">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium flex items-center gap-1"><CalendarDaysIcon className="w-4 h-4" /> Deadline</p>
-                    <p className="font-bold text-gray-900 dark:text-white text-lg">{gig.deadline || 'Negotiable'}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Target date</p>
-                  </div>
+              {/* Key stats grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 pt-6 border-t border-gray-100 dark:border-gray-800">
+                <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700/50">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium flex items-center gap-1"><CurrencyRupeeIcon className="w-4 h-4" /> Budget</p>
+                  <p className="font-bold text-gray-900 dark:text-white text-lg">{formatCurrencyINR(Number(gig.price || gig.budget || 0))}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Fixed-price</p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700/50">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium flex items-center gap-1"><ClockIcon className="w-4 h-4" /> Duration</p>
+                  <p className="font-bold text-gray-900 dark:text-white text-lg">{gig.duration || 'Not specified'}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Estimated time</p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700/50">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium flex items-center gap-1"><CalendarDaysIcon className="w-4 h-4" /> Deadline</p>
+                  <p className="font-bold text-gray-900 dark:text-white text-lg">{gig.deadline || 'Negotiable'}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Target date</p>
+                </div>
               </div>
 
               {/* Skills */}
-              <div className="mb-6">
-                <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4">Skills and Expertise</h2>
-                <div className="flex flex-wrap gap-2">
-                  {(gig.skills||[]).map(s => (
-                    <span key={s} className="bg-gray-100 dark:bg-gray-800 border border-transparent hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-full text-sm font-medium transition-colors cursor-default">
-                      {s}
-                    </span>
-                  ))}
-                  {(gig.skills||[]).length === 0 && <p className="text-gray-400 dark:text-gray-500 text-sm italic">No specific skills listed.</p>}
+              {(gig.skills || []).length > 0 && (
+                <div>
+                  <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4">Skills and Expertise</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {gig.skills.map(s => (
+                      <span key={s} className="bg-gray-100 dark:bg-gray-800 border border-transparent hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-full text-sm font-medium transition-colors cursor-default">
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* === UPWORK-STYLE SIMPLE APPLY FORM === */}
+            {showForm && !applied && gig.status === 'open' && !isOwner && (
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 md:p-8 animate-slide-up">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Submit a Proposal</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Tell the client why you're the right fit for this project.</p>
+
+                <form onSubmit={handleApplyGig} className="space-y-4">
+                  <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl mb-6">
+                    <button
+                      type="button"
+                      onClick={() => setApplyMode('resume')}
+                      className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${applyMode === 'resume' ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
+                    >
+                      Quick Apply (Resume)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setApplyMode('manual')}
+                      className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${applyMode === 'manual' ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
+                    >
+                      Fill Manually
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                        Full Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formName}
+                        onChange={e => setFormName(e.target.value)}
+                        required
+                        placeholder="Your full name"
+                        className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                        Email Address <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        value={formEmail}
+                        onChange={e => setFormEmail(e.target.value)}
+                        required
+                        placeholder="your@email.com"
+                        className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                      Phone Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      value={formPhone}
+                      onChange={e => setFormPhone(e.target.value)}
+                      required
+                      placeholder="+91 9876543210"
+                      className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400"
+                    />
+                  </div>
+
+                  {applyMode === 'manual' && (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Experience (Years)</label>
+                          <input type="number" min="0" step="0.5" value={formExperience} onChange={e => setFormExperience(e.target.value)} placeholder="e.g. 2.5" className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 overflow-hidden outline-none" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Proposed Budget (₹) <span className="text-gray-400 font-normal ml-1">Optional</span></label>
+                          <input type="number" min="0" value={formBudget} onChange={e => setFormBudget(e.target.value)} placeholder="e.g. 5000" className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 overflow-hidden outline-none" />
+                        </div>
+                      </div>
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Skills (csv)</label>
+                        <input type="text" value={formSkills} onChange={e => setFormSkills(e.target.value)} placeholder="React, Node.js" className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 overflow-hidden outline-none" />
+                      </div>
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Cover Message / Proposal</label>
+                        <textarea value={formCoverLetter} onChange={e => setFormCoverLetter(e.target.value)} rows={4} placeholder="Briefly describe why you are the best fit for this project..." className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 outline-none resize-none" />
+                      </div>
+                    </>
+                  )}
+
+                  {applyMode === 'resume' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                        <span className="flex items-center gap-1.5"><PaperClipIcon className="w-4 h-4" /> Resume <span className="text-red-500">*</span></span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx"
+                          onChange={e => setFormResume(e.target.files[0])}
+                          className="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:bg-primary-50 hover:file:bg-primary-100"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowForm(false)}
+                      className="flex-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium px-6 py-3 rounded-xl transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={actionLoading}
+                      className="flex-2 bg-primary-600 text-white font-semibold hover:bg-primary-700 px-8 py-3 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm min-w-[160px]"
+                    >
+                      {actionLoading ? (
+                        <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Submitting…</>
+                      ) : (
+                        <><CheckCircleIcon className="w-5 h-5" /> Submit Proposal</>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Applied success */}
+            {applied && (
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-6 flex items-center gap-4 animate-slide-up">
+                <CheckCircleIcon className="w-10 h-10 text-green-600 dark:text-green-400 flex-shrink-0" />
+                <div>
+                  <h3 className="font-bold text-green-800 dark:text-green-300 text-lg">Proposal Submitted!</h3>
+                  <p className="text-green-700 dark:text-green-400 text-sm mt-0.5">Your proposal has been sent to the client. They will review it and get back to you soon.</p>
                 </div>
               </div>
-            </div>
-            
-            {/* Project Status Banner (Assigned/Completed) */}
+            )}
+
+            {/* Project Status Banner */}
             {gig.assignedTo && (
               <div className={`rounded-2xl p-6 border-l-4 shadow-sm flex items-start gap-4 ${gig.status === 'completed' ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : 'border-blue-500 bg-blue-50 dark:bg-blue-900/10'}`}>
                 {gig.status === 'completed' ? <CheckCircleIcon className="w-8 h-8 text-green-600 dark:text-green-500 mt-0.5" /> : <ClockIcon className="w-8 h-8 text-blue-600 dark:text-blue-500 mt-0.5" />}
@@ -197,25 +405,33 @@ export default function GigDetailsPage() {
             )}
           </div>
 
-          {/* Sidebar Column */}
+          {/* === SIDEBAR === */}
           <div className="lg:col-span-4 flex flex-col gap-6">
-            
+
             {/* Action Box */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
-              
+
               {applied ? (
-                <div className="w-full bg-gray-100 dark:bg-gray-800 text-gray-500 font-bold py-3.5 px-4 rounded-xl shadow-sm flex items-center justify-center gap-2 mb-4 cursor-not-allowed">
+                <div className="w-full bg-gray-100 dark:bg-gray-800 text-gray-500 font-bold py-3.5 px-4 rounded-xl shadow-sm flex items-center justify-center gap-2 cursor-not-allowed">
                   <CheckCircleIcon className="w-5 h-5 text-gray-400" /> Applied
                 </div>
-              ) : gig.status === 'open' && !isOwner && !isTaken && (
+              ) : gig.status === 'open' && !isOwner && !isTaken ? (
                 <>
-                  <button onClick={handleApplyGig} disabled={actionLoading}
-                    className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2 mb-4">
-                    {actionLoading ? <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Applying…</> : 'Apply'}
-                  </button>
+                  {!showForm ? (
+                    <button
+                      onClick={() => user ? setShowForm(true) : navigate('/login')}
+                      className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 mb-4"
+                    >
+                      Apply Now
+                    </button>
+                  ) : (
+                    <div className="w-full bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-300 font-medium py-3 px-4 rounded-xl text-center text-sm mb-4">
+                      Proposal form below
+                    </div>
+                  )}
                   <p className="text-xs text-center text-gray-500 dark:text-gray-400 flex justify-center items-center gap-1.5"><ShieldCheckIcon className="w-4 h-4 text-green-500" /> Secure payment via WorkSphere</p>
                 </>
-              )}
+              ) : null}
 
               {gig.status === 'open' && isOwner && (
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 text-center">
@@ -251,14 +467,14 @@ export default function GigDetailsPage() {
             {/* Client Info Box */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
               <h3 className="font-bold text-gray-900 dark:text-white mb-4">About the client</h3>
-              
+
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <div className="bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0">
-                    {(gig.freelancer_name || gig.posted_by_name || 'C')[0]?.toUpperCase()}
+                    {(gig.posted_by_name || gig.freelancer_name || 'C')[0]?.toUpperCase()}
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900 dark:text-white leading-tight mb-0.5">{gig.freelancer_name || gig.posted_by_name || 'Client Name'}</p>
+                    <p className="font-semibold text-gray-900 dark:text-white leading-tight mb-0.5">{gig.posted_by_name || gig.freelancer_name || 'Client Name'}</p>
                     <div className="flex items-center gap-1 mb-1">
                       <StarIcon className="w-4 h-4 text-amber-400" />
                       <span className="text-sm font-medium text-gray-900 dark:text-white">{client.rating}</span>
@@ -273,8 +489,8 @@ export default function GigDetailsPage() {
                     <p className="text-sm text-gray-900 dark:text-white font-medium">{gig.location || 'India'}</p>
                   </div>
                   <div>
-                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-0.5">History</h4>
-                    <p className="text-sm text-gray-900 dark:text-white font-medium">{client.projects_posted} jobs posted</p>
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-0.5">Jobs Posted</h4>
+                    <p className="text-sm text-gray-900 dark:text-white font-medium">{client.jobs_posted || client.projects_posted || 0} jobs</p>
                   </div>
                   <div>
                     <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-0.5">Member Since</h4>

@@ -40,12 +40,10 @@ export async function findBestWorker(category, date, timeSlot) {
 }
 
 async function scoreAndRank(workers, date, timeSlot) {
+  const availableWorkers = workers.filter(w => w.availability !== false)
   const available = []
 
-  for (const worker of workers) {
-    if (worker.availability === false) continue
-
-    // Check if worker is already booked for this date + time
+  const workerPromises = availableWorkers.map(async (worker) => {
     let isBooked = false
     try {
       const bookings = await queryDocuments('bookings', 'worker_id', '==', worker.id)
@@ -55,16 +53,19 @@ async function scoreAndRank(workers, date, timeSlot) {
              b.status !== 'cancelled'
       )
     } catch {
-      // If check fails, assume available (dummy data workers)
       isBooked = false
     }
 
     if (!isBooked) {
-      const distance = Math.round(Math.random() * 10 + 1) // Simulated distance in km
+      const distance = Math.round(Math.random() * 10 + 1)
       const score = calculateWorkerScore({ ...worker, distance })
-      available.push({ ...worker, distance, match_score: score })
+      return { ...worker, distance, match_score: score }
     }
-  }
+    return null
+  })
+
+  const results = await Promise.all(workerPromises)
+  available.push(...results.filter(r => r !== null))
 
   // Sort by score descending
   available.sort((a, b) => b.match_score - a.match_score)

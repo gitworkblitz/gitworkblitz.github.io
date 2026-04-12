@@ -9,13 +9,17 @@ import { db } from './firebase'
  */
 export async function createNotification(userId, message, type = 'general') {
   try {
-    await addDoc(collection(db, 'notifications'), {
+    const promise = addDoc(collection(db, 'notifications'), {
       user_id: userId,
       message,
       type, // 'booking', 'job', 'gig', 'general'
       read: false,
       created_at: new Date().toISOString(),
     })
+    await Promise.race([
+      promise,
+      new Promise(resolve => setTimeout(resolve, 500))
+    ])
   } catch (err) {
     console.error('Failed to create notification:', err)
   }

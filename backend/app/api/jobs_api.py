@@ -38,15 +38,15 @@ async def apply_to_job(job_id: str, application: JobApplication, user=Depends(ge
     if not job or not job.get("is_active"):
         raise HTTPException(status_code=400, detail="Job not available")
     existing = await FirebaseDB.query_multiple("job_applications", [
-        ("job_id", "==", job_id),
-        ("applicant_id", "==", user["uid"])
+        ("jobId", "==", job_id),
+        ("applicantId", "==", user["uid"])
     ])
     if existing:
         raise HTTPException(status_code=400, detail="Already applied")
     data = application.dict()
-    data["applicant_id"] = user["uid"]
-    data["status"] = "pending"
-    data["applied_at"] = datetime.utcnow().isoformat()
+    data["applicantId"] = user["uid"]
+    data["status"] = "applied"
+    data["appliedAt"] = datetime.utcnow().isoformat()
     app_id = await FirebaseDB.create_document("job_applications", data)
     await FirebaseDB.update_document("jobs", job_id, {
         "applications_count": job.get("applications_count", 0) + 1
@@ -59,4 +59,4 @@ async def get_my_posted_jobs(user=Depends(get_current_user)):
 
 @router.get("/my/applications")
 async def get_my_applications(user=Depends(get_current_user)):
-    return await FirebaseDB.query_collection("job_applications", "applicant_id", "==", user["uid"])
+    return await FirebaseDB.query_collection("job_applications", "applicantId", "==", user["uid"])

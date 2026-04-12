@@ -13,19 +13,22 @@ const TYPES = ['All', 'full_time', 'part_time', 'contract', 'internship', 'remot
 
 const CATEGORIES = [
   { label: 'All', value: 'All' },
-  { label: 'Web Development', value: 'Web Development' },
-  { label: 'App Development', value: 'App Development' },
-  { label: 'AI/ML', value: 'AI/ML' },
-  { label: 'Python', value: 'Python' },
-  { label: 'Digital Marketing', value: 'Digital Marketing' },
-  { label: 'UI/UX Design', value: 'UI/UX Design' },
-  { label: 'Data Science', value: 'Data Science' },
+  { label: 'Technology', value: 'Technology' },
+  { label: 'Design', value: 'Design' },
+  { label: 'Marketing', value: 'Marketing' },
+  { label: 'Data & AI', value: 'Data & Analytics' },
+  { label: 'Sales', value: 'Sales' },
+  { label: 'Finance', value: 'Finance' },
+  { label: 'HR', value: 'Human Resources' },
+  { label: 'Writing', value: 'Writing & Content' },
+  { label: 'Operations', value: 'Operations' },
+  { label: 'Cybersecurity', value: 'Cybersecurity' },
+  { label: 'Management', value: 'Management' },
 ]
 
 const LOCATIONS = [
-  'All Locations', 'Connaught Place', 'Hauz Khas', 'Noida Sector 62',
-  'Khan Market', 'Gurgaon Cyber City', 'Noida Sector 15', 'Defence Colony',
-  'Golf Course Road', 'Saket', 'Dwarka', 'Rohini', 'Chandni Chowk'
+  'All Locations', 'Remote', 'Delhi', 'Noida Sector 62', 'Gurgaon Cyber City',
+  'Bengaluru', 'Hyderabad', 'Mumbai', 'Pune', 'Hauz Khas', 'Connaught Place'
 ]
 
 const SALARY_RANGES = [
@@ -144,7 +147,7 @@ export default function JobsPage() {
                   <AcademicCapIcon className="w-4 h-4" /> Experience
                 </label>
                 <select value={experience} onChange={e => setExperience(e.target.value)} className="input-field">
-                  {['All Experience', 'Fresher', '1–2 years', '1–3 years', '2–5 years', '3–5 years'].map(e => <option key={e} value={e}>{e}</option>)}
+                  {['All Experience', 'Fresher', '1–2 years', '1–3 years', '2–4 years', '2–5 years', '3–5 years', '3–6 years', '4–7 years', '5–8 years', '8+ years', '10+ years'].map(e => <option key={e} value={e}>{e}</option>)}
                 </select>
               </div>
             </div>
@@ -162,7 +165,7 @@ export default function JobsPage() {
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">{filtered.length} job{filtered.length !== 1 ? 's' : ''} found</p>
 
         {!loaded ? (
-          <CardGridSkeleton count={6} />
+          <CardGridSkeleton count={8} type="job" />
         ) : error ? (
           <ErrorState title="Failed to load jobs" message={error} onRetry={refreshCache} />
         ) : filtered.length > 0 ? (

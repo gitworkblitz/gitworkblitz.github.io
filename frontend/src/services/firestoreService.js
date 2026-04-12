@@ -7,16 +7,24 @@ import { createNotification } from './notificationService'
 
 // ===================== Generic CRUD =====================
 
+const executeWithTimeout = (promise, fallbackResult) => {
+  return Promise.race([
+    promise,
+    new Promise(resolve => setTimeout(() => resolve(fallbackResult), 1200))
+  ])
+}
+
 export async function createDocument(collectionName, data, docId = null) {
   try {
     const now = new Date().toISOString()
     const docData = { ...data, createdAt: now, updatedAt: now }
     if (docId) {
-      await setDoc(doc(db, collectionName, docId), docData)
+      await executeWithTimeout(setDoc(doc(db, collectionName, docId), docData), true)
       return docId
     }
-    const docRef = await addDoc(collection(db, collectionName), docData)
-    return docRef.id
+    const newDocRef = doc(collection(db, collectionName))
+    await executeWithTimeout(setDoc(newDocRef, docData), true)
+    return newDocRef.id
   } catch (err) {
     console.error(`Error creating ${collectionName}:`, err)
     throw err
@@ -36,10 +44,10 @@ export async function getDocument(collectionName, docId) {
 
 export async function updateDocument(collectionName, docId, data) {
   try {
-    await updateDoc(doc(db, collectionName, docId), {
+    await executeWithTimeout(updateDoc(doc(db, collectionName, docId), {
       ...data,
       updatedAt: new Date().toISOString()
-    })
+    }), true)
     return true
   } catch (err) {
     console.error(`Error updating ${collectionName}/${docId}:`, err)
@@ -49,7 +57,7 @@ export async function updateDocument(collectionName, docId, data) {
 
 export async function deleteDocument(collectionName, docId) {
   try {
-    await deleteDoc(doc(db, collectionName, docId))
+    await executeWithTimeout(deleteDoc(doc(db, collectionName, docId)), true)
     return true
   } catch (err) {
     console.error(`Error deleting ${collectionName}/${docId}:`, err)
@@ -234,9 +242,9 @@ export async function completeGig(gigId, userId) {
 // ===================== Job Applications =====================
 
 export async function applyToJob(applicationData) {
-  // Prevent duplicate applications
-  const existing = await queryDocuments('job_applications', 'jobId', '==', applicationData.jobId)
-  const alreadyApplied = existing.find(a => a.userId === applicationData.userId)
+  // Prevent duplicate applications — optimized check
+  const userId = applicationData.applicantId || applicationData.userId;
+  const alreadyApplied = await hasUserApplied(applicationData.jobId, userId)
   if (alreadyApplied) {
     throw new Error('You have already applied to this job')
   }
@@ -251,7 +259,7 @@ export async function applyToJob(applicationData) {
   if (applicationData.employerId) {
     await createNotification(
       applicationData.employerId,
-      `${applicationData.applicantName} applied for ${applicationData.jobTitle}`,
+      `${applicationData.name || applicationData.applicantName} applied for ${applicationData.jobTitle}`,
       'job'
     )
   }
@@ -264,12 +272,40 @@ export async function getJobApplications(jobId) {
 }
 
 export async function getUserApplications(userId) {
+  // Try applicantId first, fallback to userId
+  const apps = await queryDocuments('job_applications', 'applicantId', '==', userId)
+  if (apps.length > 0) return apps
   return await queryDocuments('job_applications', 'userId', '==', userId)
 }
 
 export async function hasUserApplied(jobId, userId) {
-  const apps = await queryDocuments('job_applications', 'jobId', '==', jobId)
-  return apps.some(a => a.userId === userId)
+  try {
+    // Optimized: compound query + limit(1) — reads at most 1 document
+    const q = query(
+      collection(db, 'job_applications'),
+      where('jobId', '==', jobId),
+      where('userId', '==', userId),
+      limit(1)
+    )
+    const snap = await getDocs(q)
+    if (!snap.empty) return true
+
+    // Check with applicantId if userId doesn't match
+    const q2 = query(
+      collection(db, 'job_applications'),
+      where('jobId', '==', jobId),
+      where('applicantId', '==', userId),
+      limit(1)
+    )
+    const snap2 = await getDocs(q2)
+    return !snap2.empty
+  } catch (err) {
+    // Fallback if composite index not yet created
+    const apps = await queryDocuments('job_applications', 'applicantId', '==', userId)
+    if (apps.some(a => a.jobId === jobId)) return true
+    const oldApps = await queryDocuments('job_applications', 'userId', '==', userId)
+    return oldApps.some(a => a.jobId === jobId)
+  }
 }
 
 export async function updateApplicationStatus(applicationId, status) {
@@ -279,9 +315,8 @@ export async function updateApplicationStatus(applicationId, status) {
 // ===================== Gig Applications =====================
 
 export async function applyToGig(applicationData) {
-  // Prevent duplicate applications
-  const existing = await queryDocuments('gig_applications', 'gigId', '==', applicationData.gigId)
-  const alreadyApplied = existing.find(a => a.userId === applicationData.userId)
+  // Prevent duplicate applications — optimized check
+  const alreadyApplied = await hasUserAppliedToGig(applicationData.gigId, applicationData.userId)
   if (alreadyApplied) {
     throw new Error('You have already applied to this gig')
   }
@@ -305,8 +340,21 @@ export async function applyToGig(applicationData) {
 }
 
 export async function hasUserAppliedToGig(gigId, userId) {
-  const apps = await queryDocuments('gig_applications', 'gigId', '==', gigId)
-  return apps.some(a => a.userId === userId)
+  try {
+    // Optimized: compound query + limit(1) — reads at most 1 document
+    const q = query(
+      collection(db, 'gig_applications'),
+      where('gigId', '==', gigId),
+      where('userId', '==', userId),
+      limit(1)
+    )
+    const snap = await getDocs(q)
+    return !snap.empty
+  } catch (err) {
+    // Fallback if composite index not yet created
+    const apps = await queryDocuments('gig_applications', 'userId', '==', userId)
+    return apps.some(a => a.gigId === gigId)
+  }
 }
 
 export async function getGigApplications(gigId) {
@@ -373,12 +421,10 @@ export async function updateWorkerRating(workerId) {
     })
 
     const services = await queryDocuments('services', 'worker_id', '==', workerId)
-    for (const svc of services) {
-      await updateDocument('services', svc.id, {
-        rating: roundedRating,
-        total_reviews: reviews.length,
-      })
-    }
+    await Promise.all(services.map(svc => updateDocument('services', svc.id, {
+      rating: roundedRating,
+      total_reviews: reviews.length,
+    })))
   } catch (err) {
     console.error('Error updating worker rating:', err)
   }
@@ -479,8 +525,10 @@ export async function updateBookingStatus(bookingId, newStatus) {
 }
 
 export async function getUserBookings(userId) {
-  const asCustomer = await queryDocuments('bookings', 'customer_id', '==', userId)
-  const asWorker = await queryDocuments('bookings', 'worker_id', '==', userId)
+  const [asCustomer, asWorker] = await Promise.all([
+    queryDocuments('bookings', 'customer_id', '==', userId),
+    queryDocuments('bookings', 'worker_id', '==', userId)
+  ])
   const seen = new Set()
   const all = []
   for (const b of [...asCustomer, ...asWorker]) {
@@ -530,7 +578,7 @@ export async function generateInvoice(bookingId, bookingData) {
     subtotal,
     tax,
     total,
-    status: 'generated',
+    status: 'paid',
   }
 
   const invoiceId = await createDocument('invoices', invoiceData)

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getUserBookings, updateBookingStatus } from '../../services/firestoreService'
 import { BOOKING_STATUSES, formatCurrencyINR } from '../../utils/dummyData'
-import { TableSkeleton } from '../../components/SkeletonLoader'
+import { ListSkeleton } from '../../components/SkeletonLoader'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import { CalendarIcon, ClockIcon, CheckCircleIcon, TruckIcon, XCircleIcon } from '@heroicons/react/24/outline'
@@ -64,7 +64,18 @@ export default function MyBookings() {
     }
   }
 
-  // if (loading) return <TableSkeleton rows={5} />
+  if (loading) return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <div className="h-8 w-40 bg-gray-200 dark:bg-gray-700 animate-pulse rounded mb-2"></div>
+          <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 animate-pulse rounded"></div>
+        </div>
+        <div className="w-32 h-10 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-lg"></div>
+      </div>
+      <ListSkeleton count={4} />
+    </div>
+  )
   if (error) return <ErrorState title="Error Loading Bookings" message={error} onRetry={loadBookings} />
 
   // Worker sees all their assigned bookings; customers see bookings they made

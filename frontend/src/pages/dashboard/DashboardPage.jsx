@@ -131,7 +131,7 @@ export default function DashboardPage() {
     return cards
   }
 
-  // if (loading) return <DashboardSkeleton />
+  if (loading) return <DashboardSkeleton />
 
   if (error) return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
@@ -145,7 +145,7 @@ export default function DashboardPage() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{greeting()}, {userProfile?.name?.split(' ')[0] || 'User'}</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{greeting()}, {(userProfile?.name || 'User').split(' ')[0]}</h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm">Here's your WorkSphere overview • <span className="capitalize font-medium text-primary-600">{userProfile?.user_type}</span></p>
       </div>
 

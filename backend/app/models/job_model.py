@@ -17,12 +17,18 @@ class JobCreate(BaseModel):
     deadline: str
 
 class JobApplication(BaseModel):
-    job_id: str
-    applicant_id: str
-    applicant_name: str
-    applicant_email: str
-    cover_letter: Optional[str] = ""
-    expected_salary: Optional[float] = None
+    jobId: str
+    applicantId: str
+    employerId: str
+    name: str
+    email: str
+    phone: str
+    experience: float
+    skills: List[str]
+    coverLetter: Optional[str] = ""
+    resumeURL: Optional[str] = None
+    appliedAt: Optional[str] = None
+    status: str = "applied"
 
 class Job(BaseModel):
     id: Optional[str] = None
