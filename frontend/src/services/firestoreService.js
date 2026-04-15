@@ -7,10 +7,21 @@ import { createNotification } from './notificationService'
 
 // ===================== Generic CRUD =====================
 
+// Write timeout — can be a bit longer since writes queue offline
 const executeWithTimeout = (promise, fallbackResult) => {
   return Promise.race([
     promise,
     new Promise(resolve => setTimeout(() => resolve(fallbackResult), 1200))
+  ])
+}
+
+// Read timeout — generous enough for real data to arrive,
+// short enough to not block UI forever if offline
+const READ_TIMEOUT_MS = 3000
+const readWithTimeout = (promise, fallback) => {
+  return Promise.race([
+    promise,
+    new Promise((resolve) => setTimeout(() => resolve(fallback), READ_TIMEOUT_MS))
   ])
 }
 
@@ -33,8 +44,8 @@ export async function createDocument(collectionName, data, docId = null) {
 
 export async function getDocument(collectionName, docId) {
   try {
-    const snap = await getDoc(doc(db, collectionName, docId))
-    if (!snap.exists()) return null
+    const snap = await readWithTimeout(getDoc(doc(db, collectionName, docId)), null)
+    if (!snap || !snap.exists()) return null
     return { id: snap.id, ...snap.data() }
   } catch (err) {
     console.error(`Error getting ${collectionName}/${docId}:`, err)
@@ -69,7 +80,8 @@ export async function getAllDocuments(collectionName, maxLimit = 200) {
   try {
     // Safety: always apply a limit to prevent full collection scans
     const q = query(collection(db, collectionName), limit(maxLimit))
-    const snap = await getDocs(q)
+    const snap = await readWithTimeout(getDocs(q), null)
+    if (!snap) return []
     return snap.docs.map(d => ({ id: d.id, ...d.data() }))
   } catch (err) {
     console.error(`Error getting all ${collectionName}:`, err)
@@ -81,13 +93,15 @@ export async function getAllDocuments(collectionName, maxLimit = 200) {
 export async function getRecentDocuments(collectionName, limitCount = 50, orderField = 'createdAt', dir = 'desc') {
   try {
     const q = query(collection(db, collectionName), orderBy(orderField, dir), limit(limitCount))
-    const snap = await getDocs(q)
+    const snap = await readWithTimeout(getDocs(q), null)
+    if (!snap) return []
     return snap.docs.map(d => ({ id: d.id, ...d.data() }))
   } catch (err) {
     // Fallback to unordered if index missing
     try {
       const q = query(collection(db, collectionName), limit(limitCount))
-      const snap = await getDocs(q)
+      const snap = await readWithTimeout(getDocs(q), null)
+      if (!snap) return []
       return snap.docs.map(d => ({ id: d.id, ...d.data() }))
     } catch (err2) {
       console.error(`Error getting recent ${collectionName}:`, err2)
@@ -100,7 +114,8 @@ export async function getRecentDocuments(collectionName, limitCount = 50, orderF
 export async function getActiveDocuments(collectionName, activeField = 'is_active', limitCount = 50) {
   try {
     const q = query(collection(db, collectionName), where(activeField, '==', true), limit(limitCount))
-    const snap = await getDocs(q)
+    const snap = await readWithTimeout(getDocs(q), null)
+    if (!snap) return []
     return snap.docs.map(d => ({ id: d.id, ...d.data() }))
   } catch (err) {
     // Fallback
@@ -111,7 +126,8 @@ export async function getActiveDocuments(collectionName, activeField = 'is_activ
 // Optimized: get collection count without fetching docs
 export async function getCollectionCount(collectionName) {
   try {
-    const snap = await getCountFromServer(collection(db, collectionName))
+    const snap = await readWithTimeout(getCountFromServer(collection(db, collectionName)), null)
+    if (!snap) return 0
     return snap.data().count
   } catch (err) {
     console.error(`Error counting ${collectionName}:`, err)
@@ -122,7 +138,8 @@ export async function getCollectionCount(collectionName) {
 export async function queryDocuments(collectionName, field, operator, value, maxLimit = 200) {
   try {
     const q = query(collection(db, collectionName), where(field, operator, value), limit(maxLimit))
-    const snap = await getDocs(q)
+    const snap = await readWithTimeout(getDocs(q), null)
+    if (!snap) return []
     return snap.docs.map(d => ({ id: d.id, ...d.data() }))
   } catch (err) {
     console.error(`Error querying ${collectionName}:`, err)
@@ -139,7 +156,8 @@ export async function queryDocumentsLimited(collectionName, field, operator, val
       orderBy(orderField, dir),
       limit(maxLimit)
     )
-    const snap = await getDocs(q)
+    const snap = await readWithTimeout(getDocs(q), null)
+    if (!snap) return []
     return snap.docs.map(d => ({ id: d.id, ...d.data() }))
   } catch (err) {
     // Fallback without orderBy if index missing
@@ -151,7 +169,8 @@ export async function queryDocumentsLimited(collectionName, field, operator, val
 export async function getQueryCount(collectionName, field, operator, value) {
   try {
     const q = query(collection(db, collectionName), where(field, operator, value))
-    const snap = await getCountFromServer(q)
+    const snap = await readWithTimeout(getCountFromServer(q), null)
+    if (!snap) return 0
     return snap.data().count
   } catch (err) {
     console.error(`Error counting ${collectionName}:`, err)
@@ -163,7 +182,8 @@ export async function getQueryCount(collectionName, field, operator, value) {
 export async function documentExists(collectionName, field, operator, value) {
   try {
     const q = query(collection(db, collectionName), where(field, operator, value), limit(1))
-    const snap = await getDocs(q)
+    const snap = await readWithTimeout(getDocs(q), null)
+    if (!snap) return false
     return !snap.empty
   } catch (err) {
     console.error(`Error checking existence in ${collectionName}:`, err)

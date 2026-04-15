@@ -108,8 +108,8 @@ export default function ServiceDetailPage() {
         address: address || userProfile?.location || '',
         amount: service.price || 0,
       })
-      toast.success('Your booking has been placed successfully')
-      navigate(`/bookings/${bookingId}`)
+      toast.success('Booking placed! Proceed to payment 💳')
+      navigate(`/bookings/${bookingId}?pay=1`)
     } catch (err) {
       toast.error(err.message || 'Failed to create booking')
     } finally {

@@ -266,20 +266,43 @@ export function PageSkeleton() {
 export function DashboardSkeleton() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+      {/* Header */}
       <div className="mb-8 space-y-2">
-        <Shimmer className="h-7 w-56" />
-        <Shimmer className="h-4 w-36" />
+        <div className="flex items-center gap-3">
+          <Shimmer className="h-7 w-56" />
+          <Shimmer className="h-6 w-20 rounded-full" />
+        </div>
+        <Shimmer className="h-4 w-44" />
       </div>
+
+      {/* Stat cards with gradient icon placeholders */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100 dark:border-gray-800 p-5 space-y-3">
-            <Shimmer className="w-10 h-10 rounded-xl" />
+            <div className="flex items-center justify-between">
+              <Shimmer className="w-11 h-11 rounded-xl" />
+              {i === 1 && <Shimmer className="h-4 w-10 rounded-full" />}
+            </div>
             <Shimmer className="h-7 w-16" />
-            <Shimmer className="h-3 w-24" />
+            <div className="flex items-center justify-between">
+              <Shimmer className="h-3 w-24" />
+              <Shimmer className="h-3 w-3 rounded-full" />
+            </div>
           </div>
         ))}
       </div>
+
+      {/* Performance banner */}
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100 dark:border-gray-800 p-6 mb-8">
+        <Shimmer className="h-5 w-40 mb-4" />
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Shimmer key={i} className="h-20 rounded-xl w-full" />
+          ))}
+        </div>
+      </div>
       
+      {/* Quick actions */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100 dark:border-gray-800 p-6 mb-8">
         <Shimmer className="h-5 w-32 mb-4" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -289,7 +312,30 @@ export function DashboardSkeleton() {
         </div>
       </div>
 
-      <TableSkeleton rows={4} />
+      {/* Recent bookings list */}
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100 dark:border-gray-800 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <Shimmer className="h-5 w-36" />
+          <Shimmer className="h-4 w-16" />
+        </div>
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center justify-between p-3 rounded-xl">
+              <div className="flex items-center gap-3">
+                <Shimmer className="w-10 h-10 rounded-lg" />
+                <div className="space-y-1.5">
+                  <Shimmer className="h-4 w-32" />
+                  <Shimmer className="h-3 w-24" />
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Shimmer className="h-6 w-20 rounded-full" />
+                <Shimmer className="h-4 w-16" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

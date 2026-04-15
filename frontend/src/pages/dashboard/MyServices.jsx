@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { queryDocuments } from '../../services/firestoreService'
@@ -6,8 +6,11 @@ import { dummyServices, formatCurrencyINR } from '../../utils/dummyData'
 import { CardGridSkeleton } from '../../components/SkeletonLoader'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
-import { WrenchScrewdriverIcon, ClockIcon } from '@heroicons/react/24/outline'
-import { StarIcon, CheckCircleIcon } from '@heroicons/react/24/solid'
+import {
+  WrenchScrewdriverIcon, ClockIcon, ArrowTrendingUpIcon,
+  EyeIcon, ArrowRightIcon
+} from '@heroicons/react/24/outline'
+import { StarIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/solid'
 
 export default function MyServices() {
   const { user } = useAuth()
@@ -16,6 +19,7 @@ export default function MyServices() {
   const [error, setError] = useState(null)
 
   const loadServices = useCallback(async () => {
+    if (!user) return
     setLoading(true)
     setError(null)
     try {
@@ -32,6 +36,19 @@ export default function MyServices() {
 
   useEffect(() => { if (user) loadServices() }, [user, loadServices])
 
+  // Memoized stats
+  const serviceStats = useMemo(() => ({
+    total: services.length,
+    active: services.filter(s => s.is_active !== false).length,
+    inactive: services.filter(s => s.is_active === false).length,
+    avgRating: services.length > 0
+      ? (services.reduce((sum, s) => sum + (s.rating || 0), 0) / services.length).toFixed(1)
+      : '0.0',
+    totalRevenue: formatCurrencyINR(
+      services.reduce((sum, s) => sum + (s.total_bookings || 0) * (s.price || 0), 0)
+    ),
+  }), [services])
+
   if (loading) return (
     <div>
       <div className="mb-6">
@@ -44,11 +61,22 @@ export default function MyServices() {
   if (error) return <ErrorState title="Error Loading Services" message={error} onRetry={loadServices} />
 
   return (
-    <div>
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="page-header">My Services</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{services.length} services listed</p>
+          <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+            <span>{serviceStats.total} services</span>
+            <span className="text-gray-300 dark:text-gray-600">•</span>
+            <span className="flex items-center gap-1">
+              <span className="status-dot bg-green-500" />
+              {serviceStats.active} active
+            </span>
+            <span className="flex items-center gap-1">
+              <StarIcon className="w-3 h-3 text-yellow-400" />
+              {serviceStats.avgRating} avg
+            </span>
+          </div>
         </div>
         <Link to="/services/create" className="btn-primary text-sm">+ Add Service</Link>
       </div>
@@ -63,12 +91,15 @@ export default function MyServices() {
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {services.map(s => (
-            <div key={s.id} className="bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-5">
+          {services.map((s, i) => (
+            <div
+              key={s.id}
+              className="stat-card dash-card-enter bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-5 group"
+            >
               {/* Title + Price */}
               <div className="flex items-start justify-between mb-2">
                 <div className="flex-1 min-w-0 pr-3">
-                  <h3 className="font-semibold text-gray-900 dark:text-white truncate">{s.title}</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-white truncate group-hover:text-primary-600 transition-colors">{s.title}</h3>
                   <p className="text-xs text-gray-400 mt-0.5 capitalize">{s.category}</p>
                 </div>
                 <span className="text-lg font-bold text-primary-600 flex-shrink-0">{formatCurrencyINR(s.price || 0)}</span>
@@ -108,8 +139,17 @@ export default function MyServices() {
                     ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
                     : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
                 }`}>
-                  {s.is_active !== false && <CheckCircleIcon className="w-3 h-3" />}
-                  {s.is_active !== false ? 'Active' : 'Inactive'}
+                  {s.is_active !== false ? (
+                    <>
+                      <span className="status-dot bg-green-500" />
+                      Active
+                    </>
+                  ) : (
+                    <>
+                      <XCircleIcon className="w-3 h-3" />
+                      Inactive
+                    </>
+                  )}
                 </span>
               </div>
             </div>

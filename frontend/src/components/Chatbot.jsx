@@ -63,16 +63,24 @@ export default function Chatbot() {
     <>
       <AnimatePresence>
         {!open && (
-          <motion.button
-            initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-            onClick={() => setOpen(true)}
-            className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center z-40 group"
-            aria-label="Open chat">
-            <ChatBubbleLeftRightIcon className="w-6 h-6 group-hover:scale-110 transition-transform" />
-            <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-white" />
-          </motion.button>
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1, y: [0, -6, 0] }}
+            exit={{ scale: 0 }}
+            transition={{ y: { duration: 3, repeat: Infinity, ease: 'easeInOut' }, scale: { duration: 0.3 } }}
+            className="fixed bottom-6 right-6 z-40"
+          >
+            <button
+              onClick={() => setOpen(true)}
+              className="chat-float-btn w-14 h-14 bg-gradient-to-br from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group hover:scale-110 active:scale-95"
+              aria-label="Open chat">
+              <ChatBubbleLeftRightIcon className="w-6 h-6 group-hover:scale-110 transition-transform" />
+              <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-white dark:border-gray-950 chat-online-dot" />
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
+
 
       <AnimatePresence>
         {open && (
@@ -81,7 +89,7 @@ export default function Chatbot() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-6 right-6 w-[380px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 z-40 flex flex-col overflow-hidden"
+            className="fixed bottom-6 right-6 w-[380px] max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-40 flex flex-col overflow-hidden"
             style={{ maxHeight: '540px' }}>
 
             <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-5 py-4 flex items-center justify-between">

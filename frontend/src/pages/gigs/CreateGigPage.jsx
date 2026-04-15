@@ -41,9 +41,10 @@ export default function CreateGigPage() {
         requirements: data.requirements || '',
         location: data.location || 'Remote',
         employer_id: user.uid,
-        freelancer_id: user.uid,
-        freelancer_name: userProfile?.name || user.displayName || user.email,
+        posted_by: user.uid,
         posted_by_name: userProfile?.name || user.displayName || user.email,
+        employer_name: userProfile?.name || user.displayName || user.email,
+        status: 'open',
       })
       toast.success('Gig created successfully! 🎉')
       navigate('/gigs')

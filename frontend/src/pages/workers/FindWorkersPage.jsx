@@ -7,9 +7,10 @@ import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import { StarIcon as StarSolid } from '@heroicons/react/24/solid'
 import {
-  MapPinIcon, MagnifyingGlassIcon, CheckBadgeIcon
+  MapPinIcon, MagnifyingGlassIcon, CheckBadgeIcon, ShieldCheckIcon, UserGroupIcon
 } from '@heroicons/react/24/outline'
 import { motion } from 'framer-motion'
+import HeroBanner from '../../components/HeroBanner'
 
 export default function FindWorkersPage() {
   const [searchParams] = useSearchParams()
@@ -52,11 +53,19 @@ export default function FindWorkersPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Find Workers</h1>
-        <p className="text-gray-500 dark:text-gray-400">Smart matching based on ratings, experience, and performance</p>
-      </div>
+      {/* Hero Banner */}
+      <HeroBanner
+        title="Hire Skilled Professionals"
+        subtitle="Browse and connect with trusted, verified workers for your projects and home needs."
+        gradient="from-blue-600 via-indigo-600 to-violet-700"
+        stats={[
+          { icon: ShieldCheckIcon, label: 'Verified Profiles' },
+          { icon: StarSolid, label: 'Top Rated' },
+          { icon: UserGroupIcon, label: 'Smart Matching' }
+        ]}
+        badge={`${workers.length} Professionals Available`}
+        badgeDot={true}
+      />
 
       {/* Search & Filters */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100 dark:border-gray-800 p-5 mb-8">

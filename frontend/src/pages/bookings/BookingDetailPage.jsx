@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getDocument, updateBookingStatus, simulatePayment, generateInvoice, getBookingInvoice, createReview, queryDocuments } from '../../services/firestoreService'
 import { BOOKING_STATUSES, formatCurrencyINR } from '../../utils/dummyData'
@@ -17,6 +17,7 @@ const STATUS_FLOW = ['requested', 'accepted', 'on_the_way', 'completed']
 
 export default function BookingDetailPage() {
   const { id } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { user, userProfile } = useAuth()
   const [booking, setBooking] = useState(null)
   const [invoice, setInvoice] = useState(null)
@@ -25,6 +26,16 @@ export default function BookingDetailPage() {
   const [showReview, setShowReview] = useState(false)
   const [existingReview, setExistingReview] = useState(null)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
+
+  // Auto-open payment modal when redirected from booking (?pay=1)
+  useEffect(() => {
+    if (searchParams.get('pay') === '1' && booking && booking.payment_status !== 'paid') {
+      setShowPaymentModal(true)
+      // Clean up URL
+      searchParams.delete('pay')
+      setSearchParams(searchParams, { replace: true })
+    }
+  }, [booking, searchParams])
 
   useEffect(() => {
     loadBooking()

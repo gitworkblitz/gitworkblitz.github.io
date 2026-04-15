@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getUserBookings, updateBookingStatus } from '../../services/firestoreService'
@@ -6,7 +6,10 @@ import { BOOKING_STATUSES, formatCurrencyINR } from '../../utils/dummyData'
 import { ListSkeleton } from '../../components/SkeletonLoader'
 import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
-import { CalendarIcon, ClockIcon, CheckCircleIcon, TruckIcon, XCircleIcon } from '@heroicons/react/24/outline'
+import {
+  CalendarIcon, ClockIcon, CheckCircleIcon, TruckIcon, XCircleIcon,
+  ArrowRightIcon, FunnelIcon
+} from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 
 // Worker actions per booking status
@@ -23,18 +26,28 @@ const WORKER_ACTIONS = {
   ],
 }
 
+const STATUS_FILTERS = [
+  { key: 'all', label: 'All' },
+  { key: 'requested', label: 'Pending', dot: 'bg-yellow-500' },
+  { key: 'active', label: 'Active', dot: 'bg-blue-500' },
+  { key: 'completed', label: 'Completed', dot: 'bg-green-500' },
+  { key: 'cancelled', label: 'Cancelled', dot: 'bg-red-500' },
+]
+
 export default function MyBookings() {
   const { user, isWorker } = useAuth()
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [actionLoading, setActionLoading] = useState(null)
+  const [filter, setFilter] = useState('all')
 
   const loadBookings = useCallback(async () => {
+    if (!user) return
     setLoading(true)
     setError(null)
     try {
-      setBookings(await getUserBookings(user.uid))
+      setBookings(await getUserBookings(user.uid, 50))
     } catch (err) {
       console.error(err)
       setError('Failed to load bookings')
@@ -45,7 +58,7 @@ export default function MyBookings() {
 
   useEffect(() => { if (user) loadBookings() }, [user, loadBookings])
 
-  const handleStatusUpdate = async (bookingId, newStatus) => {
+  const handleStatusUpdate = useCallback(async (bookingId, newStatus) => {
     setActionLoading(bookingId + newStatus)
     try {
       await updateBookingStatus(bookingId, newStatus)
@@ -62,7 +75,32 @@ export default function MyBookings() {
     } finally {
       setActionLoading(null)
     }
-  }
+  }, [])
+
+  // Memoized filtered bookings
+  const workerBookings = useMemo(() =>
+    isWorker ? bookings.filter(b => b.worker_id === user?.uid) : [],
+    [isWorker, bookings, user?.uid]
+  )
+
+  const customerBookings = useMemo(() =>
+    !isWorker ? bookings : bookings.filter(b => b.customer_id === user?.uid),
+    [isWorker, bookings, user?.uid]
+  )
+
+  const filteredCustomerBookings = useMemo(() => {
+    if (filter === 'all') return customerBookings
+    if (filter === 'active') return customerBookings.filter(b => b.status === 'accepted' || b.status === 'on_the_way')
+    return customerBookings.filter(b => b.status === filter)
+  }, [customerBookings, filter])
+
+  // Summary counts
+  const summaryCounts = useMemo(() => ({
+    total: bookings.length,
+    pending: bookings.filter(b => b.status === 'requested').length,
+    active: bookings.filter(b => b.status === 'accepted' || b.status === 'on_the_way').length,
+    completed: bookings.filter(b => b.status === 'completed' || b.status === 'reviewed').length,
+  }), [bookings])
 
   if (loading) return (
     <div>
@@ -78,16 +116,12 @@ export default function MyBookings() {
   )
   if (error) return <ErrorState title="Error Loading Bookings" message={error} onRetry={loadBookings} />
 
-  // Worker sees all their assigned bookings; customers see bookings they made
-  const workerBookings = isWorker ? bookings.filter(b => b.worker_id === user?.uid) : []
-  const customerBookings = !isWorker ? bookings : bookings.filter(b => b.customer_id === user?.uid)
-
   const renderBookingCard = (b, showActions = false) => {
     const statusConf = BOOKING_STATUSES.find(s => s.key === b.status) || BOOKING_STATUSES[0]
     const actions = showActions ? WORKER_ACTIONS[b.status] || [] : []
 
     return (
-      <div key={b.id} className="bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-4">
+      <div key={b.id} className="booking-row bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-4 dash-card-enter">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3 flex-1 min-w-0">
             <div className="w-10 h-10 bg-primary-50 dark:bg-primary-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -112,7 +146,12 @@ export default function MyBookings() {
                 {b.address && <span className="text-xs truncate max-w-[160px]">{b.address}</span>}
               </div>
               <div className="flex items-center gap-3 mt-2">
-                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${statusConf.color}`}>
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusConf.color}`}>
+                  <span className={`status-dot ${
+                    b.status === 'completed' || b.status === 'reviewed' ? 'bg-green-500' :
+                    b.status === 'requested' ? 'bg-yellow-500' :
+                    b.status === 'cancelled' ? 'bg-red-500' : 'bg-blue-500'
+                  }`} />
                   {statusConf.label}
                 </span>
                 <span className="text-sm font-bold text-gray-900 dark:text-white">
@@ -129,7 +168,7 @@ export default function MyBookings() {
                 key={action.next}
                 onClick={() => handleStatusUpdate(b.id, action.next)}
                 disabled={actionLoading === b.id + action.next}
-                className={`text-xs font-semibold px-4 py-2 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5 whitespace-nowrap ${action.cls}`}
+                className={`text-xs font-semibold px-4 py-2 rounded-lg transition-all disabled:opacity-50 flex items-center gap-1.5 whitespace-nowrap hover:shadow-md ${action.cls}`}
               >
                 {actionLoading === b.id + action.next ? (
                   <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -139,8 +178,8 @@ export default function MyBookings() {
             ))}
             {/* Customer link to detail page */}
             {!showActions && (
-              <Link to={`/bookings/${b.id}`} className="text-xs text-primary-600 hover:text-primary-700 font-medium">
-                View →
+              <Link to={`/bookings/${b.id}`} className="text-xs text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
+                View <ArrowRightIcon className="w-3 h-3" />
               </Link>
             )}
           </div>
@@ -150,16 +189,47 @@ export default function MyBookings() {
   }
 
   return (
-    <div>
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="page-header">My Bookings</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{bookings.length} total bookings</p>
+          <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+            <span>{summaryCounts.total} total</span>
+            <span className="text-gray-300 dark:text-gray-600">•</span>
+            <span className="flex items-center gap-1">
+              <span className="status-dot bg-yellow-500" />
+              {summaryCounts.pending} pending
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="status-dot bg-blue-500" />
+              {summaryCounts.active} active
+            </span>
+          </div>
         </div>
         {!isWorker && (
           <Link to="/services" className="btn-primary text-sm">Book a Service</Link>
         )}
       </div>
+
+      {/* Filter tabs */}
+      {!isWorker && customerBookings.length > 0 && (
+        <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-1 scrollbar-hide">
+          {STATUS_FILTERS.map(f => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={`flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-full whitespace-nowrap transition-all ${
+                filter === f.key
+                  ? 'bg-primary-600 text-white shadow-sm'
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700'
+              }`}
+            >
+              {f.dot && <span className={`w-1.5 h-1.5 rounded-full ${filter === f.key ? 'bg-white' : f.dot}`} />}
+              {f.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Worker section: action-capable incoming bookings */}
       {isWorker && workerBookings.length > 0 && (
@@ -178,20 +248,20 @@ export default function MyBookings() {
       )}
 
       {/* Customer bookings */}
-      {customerBookings.length === 0 && (!isWorker || workerBookings.length === 0) ? (
+      {filteredCustomerBookings.length === 0 && (!isWorker || workerBookings.length === 0) ? (
         <EmptyState
           icon={CalendarIcon}
-          title="No bookings yet"
+          title={filter !== 'all' ? `No ${filter} bookings` : 'No bookings yet'}
           description={isWorker ? 'Your accepted bookings will appear here' : 'Book a service to get started'}
           actionLabel={isWorker ? undefined : 'Browse Services'}
           actionTo={isWorker ? undefined : '/services'}
         />
       ) : (
-        customerBookings.length > 0 && (
+        filteredCustomerBookings.length > 0 && (
           <div>
             {isWorker && <h2 className="text-base font-bold text-gray-900 dark:text-white mb-3">My Bookings as Customer</h2>}
             <div className="space-y-3">
-              {customerBookings.map(b => renderBookingCard(b, false))}
+              {filteredCustomerBookings.map(b => renderBookingCard(b, false))}
             </div>
           </div>
         )

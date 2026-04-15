@@ -166,7 +166,7 @@ export default function GigDetailsPage() {
   if (loading) return <DetailSkeleton />
   if (!gig) return null
 
-  const isOwner = user && (gig.employer_id === user.uid || gig.freelancer_id === user.uid)
+  const isOwner = user && (gig.employer_id === user.uid || gig.posted_by === user.uid)
   const isAssigned = user && gig.assignedTo === user.uid
   const isTaken = gig.assignedTo && (!user || gig.assignedTo !== user.uid)
 
@@ -471,10 +471,10 @@ export default function GigDetailsPage() {
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <div className="bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0">
-                    {(gig.posted_by_name || gig.freelancer_name || 'C')[0]?.toUpperCase()}
+                    {(gig.posted_by_name || gig.employer_name || gig.freelancer_name || 'C')[0]?.toUpperCase()}
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900 dark:text-white leading-tight mb-0.5">{gig.posted_by_name || gig.freelancer_name || 'Client Name'}</p>
+                    <p className="font-semibold text-gray-900 dark:text-white leading-tight mb-0.5">{gig.posted_by_name || gig.employer_name || gig.freelancer_name || 'Client Name'}</p>
                     <div className="flex items-center gap-1 mb-1">
                       <StarIcon className="w-4 h-4 text-amber-400" />
                       <span className="text-sm font-medium text-gray-900 dark:text-white">{client.rating}</span>

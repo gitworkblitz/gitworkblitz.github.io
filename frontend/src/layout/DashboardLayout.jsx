@@ -1,95 +1,216 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
+import { motion, AnimatePresence } from 'framer-motion'
+import NotificationBell from '../components/NotificationBell'
 import {
-  HomeIcon, CalendarIcon, WrenchScrewdriverIcon,
-  BriefcaseIcon, CurrencyDollarIcon, DocumentTextIcon,
-  UserIcon, CreditCardIcon, Bars3Icon, XMarkIcon,
-  ArrowRightOnRectangleIcon, ChevronDoubleLeftIcon, ShieldCheckIcon
-} from '@heroicons/react/24/outline'
+  Home, Calendar, Wrench,
+  Briefcase, DollarSign, FileText,
+  User, CreditCard, Menu, X,
+  LogOut, ShieldCheck,
+  Rocket, Sun, Moon, ChevronDown,
+  Bell, Search
+} from 'lucide-react'
 
-const navItems = [
-  { label: 'Dashboard', to: '/dashboard', icon: HomeIcon },
-  { label: 'My Bookings', to: '/dashboard/bookings', icon: CalendarIcon },
-  { label: 'My Services', to: '/dashboard/services', icon: WrenchScrewdriverIcon },
-  { label: 'My Jobs', to: '/dashboard/jobs', icon: BriefcaseIcon },
-  { label: 'My Gigs', to: '/dashboard/gigs', icon: CurrencyDollarIcon },
-  { label: 'Payments', to: '/payments', icon: CreditCardIcon },
-  { label: 'Invoices', to: '/invoices', icon: DocumentTextIcon },
-  { label: 'Profile', to: '/profile', icon: UserIcon },
-]
-
-function SidebarContent({ onClose }) {
-  const { user, userProfile, logout } = useAuth()
+/* ──────────────────────────────────────────────
+   Sidebar (shared between desktop & mobile)
+   ────────────────────────────────────────────── */
+const SidebarContent = React.memo(function SidebarContent({ onClose }) {
+  const { user, userProfile, logout, isWorker, isEmployer, isCustomer, isAdmin } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
-  const handleLogout = async () => {
+  // Role-gated nav items — each role only sees what they can access
+  const navItems = useMemo(() => {
+    const items = [
+      { label: 'Dashboard', to: '/dashboard', icon: Home },
+      { label: 'My Bookings', to: '/dashboard/bookings', icon: Calendar },
+    ]
+
+    // Workers → My Services (they create services)
+    if (isWorker || isAdmin) {
+      items.push({ label: 'My Services', to: '/dashboard/services', icon: Wrench })
+    }
+
+    // Employers → My Jobs & My Gigs (they create jobs & gigs)
+    if (isEmployer || isAdmin) {
+      items.push(
+        { label: 'My Jobs', to: '/dashboard/jobs', icon: Briefcase },
+        { label: 'My Gigs', to: '/dashboard/gigs', icon: Rocket },
+      )
+    }
+
+    items.push(
+      { label: 'Payments', to: '/payments', icon: CreditCard },
+      { label: 'Invoices', to: '/invoices', icon: FileText },
+      { label: 'Profile', to: '/profile', icon: User },
+    )
+
+    return items
+  }, [isWorker, isEmployer, isAdmin])
+
+  const handleLogout = useCallback(async () => {
     await logout()
     navigate('/')
-  }
+  }, [logout, navigate])
 
-  const isActive = (to) => location.pathname === to || (to !== '/dashboard' && location.pathname.startsWith(to))
+  const isActive = useCallback((to) =>
+    location.pathname === to || (to !== '/dashboard' && location.pathname.startsWith(to)),
+    [location.pathname]
+  )
+
+  const userName = useMemo(() => userProfile?.name || 'User', [userProfile?.name])
+  const userInitial = useMemo(() => (userName[0] || 'U').toUpperCase(), [userName])
+  const userRole = useMemo(() => userProfile?.user_type || 'customer', [userProfile?.user_type])
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800">
       {/* Brand */}
-      <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">WS</span>
+      <div className="px-5 py-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-2.5 group">
+          <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow duration-300">
+            <span className="text-white font-bold text-sm tracking-tight">WS</span>
           </div>
-          <span className="font-bold text-gray-900 text-lg">WorkSphere</span>
+          <span className="font-bold text-gray-900 dark:text-white text-lg tracking-tight">WorkSphere</span>
         </Link>
-        {onClose && <button onClick={onClose} className="text-gray-400 hover:text-gray-600 md:hidden"><XMarkIcon className="w-5 h-5" /></button>}
+        {onClose && (
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 md:hidden p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
-      {/* User info */}
-      <div className="px-4 py-4 border-b border-gray-100">
+      {/* User section */}
+      <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-            {(userProfile?.name || 'U')[0].toUpperCase()}
+          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary-400 to-violet-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-md ring-2 ring-white dark:ring-gray-800">
+            {userInitial}
           </div>
           <div className="min-w-0">
-            <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">{userProfile?.name || 'User'}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{userProfile?.user_type || 'customer'}</p>
+            <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">{userName}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 capitalize flex items-center gap-1">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-400"></span>
+              {userRole}
+            </p>
           </div>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {navItems.map(({ label, to, icon: Icon }) => (
-          <Link key={to} to={to} onClick={onClose}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-              isActive(to) ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-            }`}>
-            <Icon className={`w-5 h-5 flex-shrink-0 ${isActive(to) ? 'text-primary-600' : 'text-gray-400'}`} />
-            {label}
-          </Link>
-        ))}
+      <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
+        {navItems.map(({ label, to, icon: Icon }, index) => {
+          const active = isActive(to)
+          return (
+            <motion.div
+              key={to}
+              initial={{ opacity: 0, x: -12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.03, duration: 0.25 }}
+            >
+              <Link to={to} onClick={onClose}
+                className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  active
+                    ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-white'
+                }`}>
+                {active && (
+                  <motion.span
+                    layoutId="sidebar-active"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-primary-600 rounded-r-full"
+                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  />
+                )}
+                <Icon className={`w-[18px] h-[18px] flex-shrink-0 transition-colors ${
+                  active ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 dark:text-gray-500'
+                }`} />
+                {label}
+              </Link>
+            </motion.div>
+          )
+        })}
         {userProfile?.user_type === 'admin' && (
-          <Link to="/admin" onClick={onClose}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-              location.pathname.startsWith('/admin') ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:bg-gray-50'
-            }`}>
-            <ShieldCheckIcon className="w-5 h-5 text-gray-400" />Admin Panel
-          </Link>
+          <motion.div
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: navItems.length * 0.03, duration: 0.25 }}
+          >
+            <Link to="/admin" onClick={onClose}
+              className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                location.pathname.startsWith('/admin')
+                  ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-white'
+              }`}>
+              {location.pathname.startsWith('/admin') && (
+                <motion.span
+                  layoutId="sidebar-active"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-primary-600 rounded-r-full"
+                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                />
+              )}
+              <ShieldCheck className={`w-[18px] h-[18px] flex-shrink-0 ${
+                location.pathname.startsWith('/admin') ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 dark:text-gray-500'
+              }`} />
+              Admin Panel
+            </Link>
+          </motion.div>
         )}
       </nav>
 
       {/* Logout */}
-      <div className="px-3 py-4 border-t border-gray-100">
+      <div className="px-3 py-3 border-t border-gray-100 dark:border-gray-800">
         <button onClick={handleLogout}
-          className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-          <ArrowRightOnRectangleIcon className="w-5 h-5" />Logout
+          className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-200 group">
+          <LogOut className="w-[18px] h-[18px] group-hover:translate-x-0.5 transition-transform" />
+          Logout
         </button>
       </div>
     </div>
   )
-}
+})
 
+/* ──────────────────────────────────────────────
+   Dashboard Top Bar (desktop only, inside layout)
+   ────────────────────────────────────────────── */
+const DashboardTopBar = React.memo(function DashboardTopBar() {
+  const { userProfile } = useAuth()
+  const { darkMode, toggleTheme } = useTheme()
+  const userName = useMemo(() => (userProfile?.name || 'User').split(' ')[0], [userProfile?.name])
+  const userInitial = useMemo(() => (userName[0] || 'U').toUpperCase(), [userName])
+
+  return (
+    <div className="hidden md:flex items-center justify-between h-16 px-6 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
+      {/* Left: Search hint */}
+      <div className="flex items-center gap-3 text-gray-400 dark:text-gray-500">
+        <Search className="w-4 h-4" />
+        <span className="text-sm">Quick search…</span>
+      </div>
+
+      {/* Right: Controls */}
+      <div className="flex items-center gap-2">
+        <button onClick={toggleTheme} aria-label="Toggle dark mode"
+          className="p-2 rounded-lg transition-all duration-200 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800">
+          {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        </button>
+
+        <NotificationBell />
+
+        <Link to="/dashboard" className="flex items-center gap-2 ml-1 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary-400 to-violet-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+            {userInitial}
+          </div>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-200 max-w-[80px] truncate">{userName}</span>
+        </Link>
+      </div>
+    </div>
+  )
+})
+
+/* ──────────────────────────────────────────────
+   Layout root
+   ────────────────────────────────────────────── */
 export default function DashboardLayout() {
+  const { userProfile } = useAuth()
   const [open, setOpen] = useState(false)
 
   return (
@@ -100,25 +221,53 @@ export default function DashboardLayout() {
       </aside>
 
       {/* Mobile overlay */}
-      {open && (
-        <div className="fixed inset-0 z-40 md:hidden flex">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
-          <aside className="relative z-50 w-64 h-full shadow-2xl">
-            <SidebarContent onClose={() => setOpen(false)} />
-          </aside>
-        </div>
-      )}
+      <AnimatePresence>
+        {open && (
+          <div className="fixed inset-0 z-40 md:hidden flex">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setOpen(false)}
+            />
+            <motion.aside
+              initial={{ x: -280 }}
+              animate={{ x: 0 }}
+              exit={{ x: -280 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+              className="relative z-50 w-64 h-full shadow-2xl"
+            >
+              <SidebarContent onClose={() => setOpen(false)} />
+            </motion.aside>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Desktop top bar */}
+        <DashboardTopBar />
+
         {/* Mobile topbar */}
-        <div className="md:hidden bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
-          <button onClick={() => setOpen(true)} className="text-gray-500 hover:text-gray-900">
-            <Bars3Icon className="w-6 h-6" />
+        <div className="md:hidden bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-4 py-3 flex items-center justify-between">
+          <button onClick={() => setOpen(true)} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+            <Menu className="w-6 h-6" />
           </button>
-          <Link to="/" className="font-bold text-primary-600 text-lg">WorkSphere</Link>
-          <Link to="/profile"><div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-sm font-bold">U</div></Link>
+          <Link to="/" className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center shadow-sm">
+              <span className="text-white font-bold text-xs">WS</span>
+            </div>
+            <span className="font-bold text-primary-600 text-lg">WorkSphere</span>
+          </Link>
+          <Link to="/profile">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-violet-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+              {(userProfile?.name || 'U')[0].toUpperCase()}
+            </div>
+          </Link>
         </div>
+
         <main className="flex-1 overflow-y-auto">
           <Outlet />
         </main>

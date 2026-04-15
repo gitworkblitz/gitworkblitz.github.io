@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { MagnifyingGlassIcon, PlusIcon, MapPinIcon, CurrencyDollarIcon, FunnelIcon, AcademicCapIcon } from '@heroicons/react/24/outline'
+import { StarIcon as StarSolid, BriefcaseIcon, BuildingOffice2Icon, GlobeAltIcon } from '@heroicons/react/24/solid'
 import { useAuth } from '../../context/AuthContext'
 import { useDataCache } from '../../context/DataCacheContext'
 import JobCard from '../../components/JobCard'
@@ -74,17 +75,52 @@ export default function JobsPage() {
 
   const activeFilterCount = [type !== 'All', location !== 'All Locations', salaryRange !== 0, experience !== 'All Experience'].filter(Boolean).length
 
+  const remoteCount = useMemo(() => jobs.filter(j => j.employment_type === 'remote' || j.location === 'Remote').length, [jobs])
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">Job Portal</h1>
-            <p className="text-gray-500 dark:text-gray-400">{jobs.length} open positions across Delhi NCR</p>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      {/* Hero Banner */}
+      <div className="bg-gradient-to-r from-primary-600 via-indigo-600 to-violet-600 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 relative">
+            {/* Decorative circles */}
+            <div className="absolute inset-0 opacity-10 pointer-events-none" aria-hidden>
+              <div className="absolute -top-20 -right-20 w-64 h-64 bg-white rounded-full" />
+              <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-white rounded-full" />
+            </div>
+
+            <div className="relative z-10">
+              <span className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm text-sm font-medium px-3 py-1 rounded-full mb-3">
+                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                {jobs.length} Open Positions
+              </span>
+              <h1 className="text-3xl md:text-4xl font-bold mb-2">Find Your Dream Job</h1>
+              <p className="text-white/80 text-lg">Explore opportunities tailored for you</p>
+
+              <div className="flex flex-wrap items-center gap-4 mt-4">
+                <span className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm text-white/90">
+                  <BriefcaseIcon className="w-4 h-4" /> {jobs.length}+ Jobs
+                </span>
+                <span className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm text-white/90">
+                  <BuildingOffice2Icon className="w-4 h-4" /> Top Companies
+                </span>
+                <span className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm text-white/90">
+                  <GlobeAltIcon className="w-4 h-4" /> {remoteCount}+ Remote
+                </span>
+              </div>
+            </div>
+
+            {user && userProfile?.user_type === 'employer' && (
+              <Link to="/jobs/create" className="relative z-10 group bg-white text-primary-700 font-semibold px-6 py-3 rounded-xl hover:bg-primary-50 transition-all shadow-lg flex items-center gap-2 self-start">
+                <PlusIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                Post a Job
+              </Link>
+            )}
           </div>
-          {user && userProfile?.user_type === 'employer' && <Link to="/jobs/create" className="btn-primary flex items-center gap-2 self-start"><PlusIcon className="w-4 h-4" />Post Job</Link>}
         </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Search & Primary Filter */}
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-4 mb-4">

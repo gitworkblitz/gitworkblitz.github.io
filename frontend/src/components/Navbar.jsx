@@ -6,9 +6,9 @@ import { Menu, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
 import NotificationBell from './NotificationBell'
 import {
-  Bars3Icon, XMarkIcon, UserCircleIcon, ArrowRightOnRectangleIcon,
-  ShieldCheckIcon, ChevronDownIcon, Squares2X2Icon, SunIcon, MoonIcon
-} from '@heroicons/react/24/outline'
+  Menu as MenuIcon, X, UserCircle, LogOut,
+  ShieldCheck, ChevronDown, LayoutGrid, Sun, Moon
+} from 'lucide-react'
 
 const publicLinks = [
   { label: 'Services', to: '/services' },
@@ -69,7 +69,7 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-2">
             <button onClick={toggleTheme} aria-label="Toggle dark mode"
               className="p-2 rounded-lg transition-all duration-200 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800">
-              {darkMode ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+              {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
 
             {loading ? (
@@ -82,7 +82,7 @@ export default function Navbar() {
                 <NotificationBell />
 
                 <Link to="/dashboard" className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all text-gray-700 dark:text-gray-300 hover:text-primary-600 hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <Squares2X2Icon className="w-4 h-4" />
+                  <LayoutGrid className="w-4 h-4" />
                   Dashboard
                 </Link>
 
@@ -94,7 +94,7 @@ export default function Navbar() {
                     <span className="text-sm font-medium max-w-[100px] truncate text-gray-700 dark:text-gray-200">
                       {userProfile?.name?.split(' ')[0] || 'User'}
                     </span>
-                    <ChevronDownIcon className="w-3.5 h-3.5 text-gray-400" />
+                    <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
                   </Menu.Button>
 
                   <Transition as={Fragment}
@@ -109,20 +109,20 @@ export default function Navbar() {
 
                       <Menu.Item>{({ active }) => (
                         <Link to="/profile" className={`flex items-center gap-2.5 px-4 py-2.5 text-sm ${active ? 'bg-gray-50 dark:bg-gray-700' : ''} text-gray-700 dark:text-gray-200`}>
-                          <UserCircleIcon className="w-4 h-4 text-gray-400" />Profile
+                          <UserCircle className="w-4 h-4 text-gray-400" />Profile
                         </Link>
                       )}</Menu.Item>
 
                       <Menu.Item>{({ active }) => (
                         <Link to="/dashboard" className={`flex items-center gap-2.5 px-4 py-2.5 text-sm ${active ? 'bg-gray-50 dark:bg-gray-700' : ''} text-gray-700 dark:text-gray-200`}>
-                          <Squares2X2Icon className="w-4 h-4 text-gray-400" />Dashboard
+                          <LayoutGrid className="w-4 h-4 text-gray-400" />Dashboard
                         </Link>
                       )}</Menu.Item>
 
                       {userProfile?.user_type === 'admin' && (
                         <Menu.Item>{({ active }) => (
                           <Link to="/admin" className={`flex items-center gap-2.5 px-4 py-2.5 text-sm ${active ? 'bg-gray-50 dark:bg-gray-700' : ''} text-gray-700 dark:text-gray-200`}>
-                            <ShieldCheckIcon className="w-4 h-4 text-gray-400" />Admin Panel
+                            <ShieldCheck className="w-4 h-4 text-gray-400" />Admin Panel
                           </Link>
                         )}</Menu.Item>
                       )}
@@ -131,7 +131,7 @@ export default function Navbar() {
                         <Menu.Item>{({ active }) => (
                           <button onClick={async () => { await logout(); navigate('/') }}
                             className={`flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 w-full text-left ${active ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
-                            <ArrowRightOnRectangleIcon className="w-4 h-4" />Logout
+                            <LogOut className="w-4 h-4" />Logout
                           </button>
                         )}</Menu.Item>
                       </div>
@@ -152,12 +152,12 @@ export default function Navbar() {
             {user && <NotificationBell />}
             <button onClick={toggleTheme} aria-label="Toggle dark mode"
               className="p-2 rounded-lg transition-colors text-gray-500 dark:text-gray-400">
-              {darkMode ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+              {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
               className="p-2 rounded-lg transition-colors text-gray-500">
-              {mobileOpen ? <XMarkIcon className="w-6 h-6" /> : <Bars3Icon className="w-6 h-6" />}
+              {mobileOpen ? <X className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
             </button>
           </div>
         </div>

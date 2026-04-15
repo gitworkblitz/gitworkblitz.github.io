@@ -29,6 +29,7 @@ export default function CreateJobPage() {
       await createJob({
         title: data.title,
         company: data.company,
+        category: data.category,
         description: data.description,
         location: data.location,
         employment_type: data.employment_type,
@@ -40,6 +41,9 @@ export default function CreateJobPage() {
         posted_by: user.uid,
         poster_name: userProfile?.name || user.displayName || user.email,
         employer_id: user.uid,
+        employer_name: userProfile?.name || user.displayName || user.email,
+        is_active: true,
+        status: 'open',
       })
       toast.success('Job posted successfully!')
       navigate('/jobs')
@@ -58,8 +62,19 @@ export default function CreateJobPage() {
         <div className="card p-6">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {[['title','Job Title','Senior React Developer',{required:'Title is required'}],['company','Company Name','Tech Corp India',{required:'Company is required'}]].map(([n,l,p,r])=>(
-              <div key={n}><label className="block text-sm font-medium text-gray-700 mb-1.5">{l}</label><input {...register(n,r)} className="input-field" placeholder={p} />{errors[n]&&<p className="text-red-500 text-xs mt-1">{errors[n].message}</p>}</div>
+              <div key={n}><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{l}</label><input {...register(n,r)} className="input-field" placeholder={p} />{errors[n]&&<p className="text-red-500 text-xs mt-1">{errors[n].message}</p>}</div>
             ))}
+            {/* Category */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Category</label>
+              <select {...register('category', { required: 'Category is required' })} className="input-field">
+                <option value="">Select category</option>
+                {['Technology', 'Design', 'Marketing', 'Sales', 'Finance', 'HR', 'Operations', 'Engineering', 'Content Writing', 'Data Science', 'Customer Support', 'Education'].map(c => (
+                  <option key={c} value={c.toLowerCase().replace(/ /g, '_')}>{c}</option>
+                ))}
+              </select>
+              {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category.message}</p>}
+            </div>
             <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label><textarea {...register('description',{required:'Description is required'})} rows={4} className="input-field" placeholder="Describe the role and responsibilities…" />{errors.description&&<p className="text-red-500 text-xs mt-1">{errors.description.message}</p>}</div>
             <div className="grid grid-cols-2 gap-4">
               <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Location</label><input {...register('location',{required:'Location is required'})} className="input-field" placeholder="Delhi NCR" />{errors.location&&<p className="text-red-500 text-xs mt-1">{errors.location.message}</p>}</div>
