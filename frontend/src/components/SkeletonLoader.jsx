@@ -278,15 +278,17 @@ export function DashboardSkeleton() {
       {/* Stat cards with gradient icon placeholders */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100 dark:border-gray-800 p-5 space-y-3">
+          <div key={i} className="flex flex-col justify-between bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-5 h-[140px] w-full">
             <div className="flex items-center justify-between">
-              <Shimmer className="w-11 h-11 rounded-xl" />
-              {i === 1 && <Shimmer className="h-4 w-10 rounded-full" />}
+              <Shimmer className="w-12 h-12 rounded-full shrink-0" />
+              {i === 1 && <Shimmer className="h-4 w-12 rounded-full shrink-0" />}
             </div>
-            <Shimmer className="h-7 w-16" />
-            <div className="flex items-center justify-between">
-              <Shimmer className="h-3 w-24" />
-              <Shimmer className="h-3 w-3 rounded-full" />
+            <div>
+              <Shimmer className="h-8 w-16 mb-2" />
+              <div className="flex items-center justify-between">
+                <Shimmer className="h-3 w-20" />
+                <Shimmer className="h-3 w-3 rounded-full shrink-0" />
+              </div>
             </div>
           </div>
         ))}
@@ -303,34 +305,35 @@ export function DashboardSkeleton() {
       </div>
       
       {/* Quick actions */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100 dark:border-gray-800 p-6 mb-8">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-6 mb-8">
         <Shimmer className="h-5 w-32 mb-4" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Shimmer key={i} className="h-16 rounded-xl w-full" />
+            <Shimmer key={i} className="h-[48px] rounded-xl w-full" />
           ))}
         </div>
       </div>
 
       {/* Recent bookings list */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100 dark:border-gray-800 p-6">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-6">
         <div className="flex items-center justify-between mb-4">
           <Shimmer className="h-5 w-36" />
           <Shimmer className="h-4 w-16" />
         </div>
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-center justify-between p-3 rounded-xl">
-              <div className="flex items-center gap-3">
-                <Shimmer className="w-10 h-10 rounded-lg" />
-                <div className="space-y-1.5">
+            <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-transparent h-[64px]">
+              <div className="flex items-center gap-3 overflow-hidden">
+                <Shimmer className="w-10 h-10 rounded-lg shrink-0" />
+                <div className="space-y-1.5 flex-1 min-w-0">
                   <Shimmer className="h-4 w-32" />
                   <Shimmer className="h-3 w-24" />
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <Shimmer className="h-6 w-20 rounded-full" />
-                <Shimmer className="h-4 w-16" />
+              <div className="flex items-center gap-3 shrink-0 ml-4">
+                <Shimmer className="h-5 w-16 rounded-full" />
+                <Shimmer className="h-5 w-14 rounded-full" />
+                <Shimmer className="h-5 w-16" />
               </div>
             </div>
           ))}

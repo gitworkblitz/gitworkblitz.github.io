@@ -11,7 +11,7 @@ import { PageSkeleton } from '../components/SkeletonLoader'
 export const AuthContext = createContext()
 export const useAuth = () => useContext(AuthContext)
 
-const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'worksphere@gmail.com'
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'worksphere.admin@gmail.com'
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)

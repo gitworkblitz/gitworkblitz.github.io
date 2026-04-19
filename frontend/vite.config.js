@@ -22,6 +22,8 @@ export default defineConfig({
           firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
           // UI libraries — animation + headless UI
           ui: ['framer-motion', '@headlessui/react'],
+          // Charts — only used by admin dashboard
+          charts: ['recharts'],
           // Icons — large tree, split separately
           icons: ['@heroicons/react'],
         }

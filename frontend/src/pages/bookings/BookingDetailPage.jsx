@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getDocument, updateBookingStatus, simulatePayment, generateInvoice, getBookingInvoice, createReview, queryDocuments } from '../../services/firestoreService'
@@ -8,10 +8,10 @@ import PaymentModal from '../../components/PaymentModal'
 import { DetailSkeleton } from '../../components/SkeletonLoader'
 import toast from 'react-hot-toast'
 import {
-  CalendarIcon, ClockIcon, MapPinIcon, CurrencyRupeeIcon,
-  CheckCircleIcon, TruckIcon
-} from '@heroicons/react/24/outline'
-import { StarIcon as StarSolid } from '@heroicons/react/24/solid'
+  Calendar as CalendarIcon, Clock as ClockIcon, MapPin as MapPinIcon,
+  IndianRupee as CurrencyRupeeIcon, CheckCircle as CheckCircleIcon,
+  Truck as TruckIcon, Star as StarIcon, ArrowLeft, CreditCard
+} from 'lucide-react'
 
 const STATUS_FLOW = ['requested', 'accepted', 'on_the_way', 'completed']
 
@@ -37,11 +37,7 @@ export default function BookingDetailPage() {
     }
   }, [booking, searchParams])
 
-  useEffect(() => {
-    loadBooking()
-  }, [id])
-
-  const loadBooking = async () => {
+  const loadBooking = useCallback(async () => {
     setLoading(true)
     try {
       const doc = await getDocument('bookings', id)
@@ -58,9 +54,13 @@ export default function BookingDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [id])
 
-  const handleStatusUpdate = async (newStatus) => {
+  useEffect(() => {
+    loadBooking()
+  }, [loadBooking])
+
+  const handleStatusUpdate = useCallback(async (newStatus) => {
     setActionLoading(true)
     try {
       await updateBookingStatus(id, newStatus)
@@ -72,9 +72,9 @@ export default function BookingDetailPage() {
     } finally {
       setActionLoading(false)
     }
-  }
+  }, [id])
 
-  const handlePayment = async () => {
+  const handlePayment = useCallback(async () => {
     setActionLoading(true)
     try {
       await simulatePayment(id, booking.amount || booking.price || 0, user.uid)
@@ -88,9 +88,9 @@ export default function BookingDetailPage() {
     } finally {
       setActionLoading(false)
     }
-  }
+  }, [id, booking, user])
 
-  const handleReviewSubmit = async (reviewData) => {
+  const handleReviewSubmit = useCallback(async (reviewData) => {
     try {
       await createReview({
         ...reviewData,
@@ -108,15 +108,15 @@ export default function BookingDetailPage() {
     } catch (err) {
       toast.error(err.message || 'Failed to submit review')
     }
-  }
+  }, [id, booking, user, userProfile, loadBooking])
 
   if (loading) return <DetailSkeleton />
 
   if (!booking) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center">
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Booking Not Found</h2>
-        <p className="text-gray-500 mb-6">This booking doesn't exist or you don't have access.</p>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Booking Not Found</h2>
+        <p className="text-gray-500 dark:text-gray-400 mb-6">This booking doesn't exist or you don't have access.</p>
         <Link to="/dashboard/bookings" className="btn-primary">Go to My Bookings</Link>
       </div>
     )
@@ -130,8 +130,8 @@ export default function BookingDetailPage() {
   const getNextAction = () => {
     if (!isWorker) return null
     if (booking.status === 'requested') return { label: 'Accept Booking', status: 'accepted', color: 'btn-primary' }
-    if (booking.status === 'accepted') return { label: 'On the Way', status: 'on_the_way', color: 'bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors font-medium' }
-    if (booking.status === 'on_the_way') return { label: 'Mark Completed', status: 'completed', color: 'bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium' }
+    if (booking.status === 'accepted') return { label: 'On the Way', status: 'on_the_way', color: 'bg-indigo-600 text-white px-4 py-2.5 rounded-xl hover:bg-indigo-700 transition-all font-medium active:scale-[0.98]' }
+    if (booking.status === 'on_the_way') return { label: 'Mark Completed', status: 'completed', color: 'bg-green-600 text-white px-4 py-2.5 rounded-xl hover:bg-green-700 transition-all font-medium active:scale-[0.98]' }
     return null
   }
 
@@ -142,27 +142,27 @@ export default function BookingDetailPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
-          <Link to="/dashboard/bookings" className="text-sm text-primary-600 hover:text-primary-700 mb-2 inline-flex items-center gap-1">
-            &larr; Back to bookings
+          <Link to="/dashboard/bookings" className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 mb-2 inline-flex items-center gap-1 transition-colors">
+            <ArrowLeft className="w-4 h-4" /> Back to bookings
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900 mt-1">Booking Details</h1>
-          <p className="text-sm text-gray-500 mt-1">ID: {id?.slice(0, 12)}...</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">Booking Details</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">ID: {id?.slice(0, 12)}...</p>
         </div>
         <div className="flex items-center gap-3">
           {BOOKING_STATUSES.filter(s => s.key === booking.status).map(s => (
             <span key={s.key} className={`px-3 py-1.5 rounded-full text-sm font-medium ${s.color}`}>{s.label}</span>
           ))}
           {booking.payment_status === 'paid' && (
-            <span className="bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-sm font-medium">Paid</span>
+            <span className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 px-3 py-1.5 rounded-full text-sm font-medium">Paid</span>
           )}
         </div>
       </div>
 
       {/* Status Flow Timeline */}
-      <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-6 mb-6">
-        <h3 className="font-semibold text-gray-900 mb-5">Service Status</h3>
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100 dark:border-gray-800 p-6 mb-6">
+        <h3 className="font-semibold text-gray-900 dark:text-white mb-5">Service Status</h3>
         <div className="flex items-center justify-between relative">
-          <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200 z-0" />
+          <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200 dark:bg-gray-700 z-0" />
           <div className="absolute top-5 left-0 h-0.5 bg-primary-600 z-0 transition-all duration-500"
             style={{ width: currentStatusIndex >= 0 ? `${(currentStatusIndex / (STATUS_FLOW.length - 1)) * 100}%` : '0%' }} />
 
@@ -175,15 +175,15 @@ export default function BookingDetailPage() {
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
                   isComplete
                     ? 'bg-primary-600 border-primary-600 text-white'
-                    : 'bg-white border-gray-300 text-gray-400'
-                } ${isCurrent ? 'ring-4 ring-primary-100 scale-110' : ''}`}>
+                    : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500'
+                } ${isCurrent ? 'ring-4 ring-primary-100 dark:ring-primary-900/30 scale-110' : ''}`}>
                   {isComplete ? (
                     <CheckCircleIcon className="w-5 h-5" />
                   ) : (
                     <span className="text-xs font-bold">{i + 1}</span>
                   )}
                 </div>
-                <span className={`text-xs mt-2 font-medium ${isComplete ? 'text-primary-600' : 'text-gray-400'}`}>
+                <span className={`text-xs mt-2 font-medium ${isComplete ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 dark:text-gray-500'}`}>
                   {statusConf?.label}
                 </span>
               </div>
@@ -195,8 +195,8 @@ export default function BookingDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Details */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-6">
-            <h3 className="font-semibold text-gray-900 mb-4">Service Information</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100 dark:border-gray-800 p-6">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Service Information</h3>
             <div className="space-y-3">
               <InfoRow icon={<CalendarIcon className="w-5 h-5" />} label="Service" value={booking.service_title || 'N/A'} />
               <InfoRow icon={<CalendarIcon className="w-5 h-5" />} label="Date" value={booking.booking_date || 'N/A'} />
@@ -206,8 +206,8 @@ export default function BookingDetailPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-6">
-            <h3 className="font-semibold text-gray-900 mb-4">People</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100 dark:border-gray-800 p-6">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">People</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <PersonCard label="Customer" name={booking.customer_name || 'Customer'} type="customer" />
               <PersonCard label="Worker" name={booking.worker_name || 'Worker'} type="worker" />
@@ -215,18 +215,18 @@ export default function BookingDetailPage() {
           </div>
 
           {existingReview && (
-            <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Your Review</h3>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100 dark:border-gray-800 p-6">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Your Review</h3>
               <div className="flex gap-0.5 mb-2">
                 {[...Array(5)].map((_, i) => (
-                  <StarSolid key={i} className={`w-5 h-5 ${i < existingReview.rating ? 'text-yellow-400' : 'text-gray-200'}`} />
+                  <StarIcon key={i} className={`w-5 h-5 ${i < existingReview.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200 dark:text-gray-700'}`} />
                 ))}
               </div>
-              <p className="text-gray-700 text-sm leading-relaxed">"{existingReview.comment}"</p>
+              <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">"{existingReview.comment}"</p>
               {existingReview.tags?.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-3">
                   {existingReview.tags.map(tag => (
-                    <span key={tag} className="text-xs bg-primary-50 text-primary-600 px-2 py-0.5 rounded-full">{tag}</span>
+                    <span key={tag} className="text-xs bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 px-2 py-0.5 rounded-full">{tag}</span>
                   ))}
                 </div>
               )}
@@ -237,10 +237,10 @@ export default function BookingDetailPage() {
         {/* Actions sidebar */}
         <div className="space-y-4">
           {nextAction && (
-            <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-5">
-              <h4 className="font-semibold text-gray-900 mb-3">Worker Actions</h4>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100 dark:border-gray-800 p-5">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Worker Actions</h4>
               <button onClick={() => handleStatusUpdate(nextAction.status)} disabled={actionLoading}
-                className={`w-full ${nextAction.color} flex items-center justify-center gap-2`}>
+                className={`w-full ${nextAction.color} flex items-center justify-center gap-2 disabled:opacity-50`}>
                 {actionLoading ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : nextAction.label}
@@ -249,28 +249,28 @@ export default function BookingDetailPage() {
           )}
 
           {isCustomer && booking.payment_status !== 'paid' && booking.status !== 'cancelled' && (
-            <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-5">
-              <h4 className="font-semibold text-gray-900 mb-2">Payment</h4>
-              <p className="text-sm text-gray-500 mb-1">Amount due:</p>
-              <p className="text-2xl font-bold text-gray-900 mb-4">{formatCurrencyINR(booking.amount || booking.price || 0)}</p>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100 dark:border-gray-800 p-5">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Payment</h4>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Amount due:</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{formatCurrencyINR(booking.amount || booking.price || 0)}</p>
               <button
                 onClick={() => setShowPaymentModal(true)}
-                className="w-full bg-green-600 text-white px-4 py-3 rounded-xl hover:bg-green-700 transition-colors font-bold flex items-center justify-center gap-2 shadow-sm"
+                className="w-full bg-green-600 text-white px-4 py-3 rounded-xl hover:bg-green-700 transition-all font-bold flex items-center justify-center gap-2 shadow-sm active:scale-[0.98]"
               >
-                <CurrencyRupeeIcon className="w-5 h-5" />
+                <CreditCard className="w-5 h-5" />
                 Pay Now
               </button>
             </div>
           )}
 
           {invoice && (
-            <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-5">
-              <h4 className="font-semibold text-gray-900 mb-2">Invoice</h4>
-              <p className="text-xs text-gray-400 mb-3">#{invoice.invoice_number}</p>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100 dark:border-gray-800 p-5">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Invoice</h4>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">#{invoice.invoice_number}</p>
               <div className="space-y-1.5 text-sm mb-4">
-                <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span>{formatCurrencyINR(invoice.subtotal || 0)}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">GST (18%)</span><span>{formatCurrencyINR(invoice.tax || 0)}</span></div>
-                <div className="flex justify-between font-bold border-t pt-1.5"><span>Total</span><span>{formatCurrencyINR(invoice.total || 0)}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500 dark:text-gray-400">Subtotal</span><span className="text-gray-900 dark:text-white">{formatCurrencyINR(invoice.subtotal || 0)}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500 dark:text-gray-400">GST (18%)</span><span className="text-gray-900 dark:text-white">{formatCurrencyINR(invoice.tax || 0)}</span></div>
+                <div className="flex justify-between font-bold border-t border-gray-100 dark:border-gray-800 pt-1.5"><span className="text-gray-900 dark:text-white">Total</span><span className="text-gray-900 dark:text-white">{formatCurrencyINR(invoice.total || 0)}</span></div>
               </div>
               <Link to={`/invoices/${invoice.id}`} className="btn-outline w-full text-center text-sm block">
                 View Full Invoice
@@ -279,11 +279,11 @@ export default function BookingDetailPage() {
           )}
 
           {canReview && (
-            <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl border border-yellow-200 p-5">
-              <h4 className="font-semibold text-gray-900 mb-2">Rate and Review</h4>
-              <p className="text-sm text-gray-600 mb-4">Service completed! Share your experience.</p>
-              <button onClick={() => setShowReview(true)} className="w-full bg-yellow-500 text-white px-4 py-2.5 rounded-xl hover:bg-yellow-600 transition-colors font-semibold flex items-center justify-center gap-2">
-                <StarSolid className="w-5 h-5" />
+            <div className="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/10 dark:to-orange-900/10 rounded-2xl border border-yellow-200 dark:border-yellow-800 p-5">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Rate and Review</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Service completed! Share your experience.</p>
+              <button onClick={() => setShowReview(true)} className="w-full bg-yellow-500 text-white px-4 py-2.5 rounded-xl hover:bg-yellow-600 transition-all font-semibold flex items-center justify-center gap-2 active:scale-[0.98]">
+                <StarIcon className="w-5 h-5 fill-white" />
                 Write a Review
               </button>
             </div>
@@ -291,7 +291,7 @@ export default function BookingDetailPage() {
 
           {isCustomer && booking.status === 'requested' && (
             <button onClick={() => handleStatusUpdate('cancelled')} disabled={actionLoading}
-              className="w-full bg-red-50 text-red-600 border border-red-200 px-4 py-2.5 rounded-xl hover:bg-red-100 transition-colors font-medium text-sm">
+              className="w-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 px-4 py-2.5 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-all font-medium text-sm disabled:opacity-50 active:scale-[0.98]">
               Cancel Booking
             </button>
           )}
@@ -319,11 +319,11 @@ export default function BookingDetailPage() {
 
 function InfoRow({ icon, label, value }) {
   return (
-    <div className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
-      <div className="text-gray-400">{icon}</div>
+    <div className="flex items-center gap-3 py-2 border-b border-gray-50 dark:border-gray-800/50 last:border-0">
+      <div className="text-gray-400 dark:text-gray-500">{icon}</div>
       <div className="flex-1">
-        <p className="text-xs text-gray-400">{label}</p>
-        <p className="text-sm font-medium text-gray-900">{value}</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">{label}</p>
+        <p className="text-sm font-medium text-gray-900 dark:text-white">{value}</p>
       </div>
     </div>
   )
@@ -331,15 +331,15 @@ function InfoRow({ icon, label, value }) {
 
 function PersonCard({ label, name, type }) {
   return (
-    <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-4">
+    <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
       <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm ${
         type === 'customer' ? 'bg-blue-500' : 'bg-green-500'
       }`}>
         {name[0]?.toUpperCase()}
       </div>
       <div>
-        <p className="text-xs text-gray-400">{label}</p>
-        <p className="text-sm font-semibold text-gray-900">{name}</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">{label}</p>
+        <p className="text-sm font-semibold text-gray-900 dark:text-white">{name}</p>
       </div>
     </div>
   )

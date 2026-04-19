@@ -28,7 +28,7 @@ export default function FeedbackPage() {
       return
     }
     setSending(true)
-    await new Promise(r => setTimeout(r, 1200))
+    // Instant — no artificial delay
     setSubmitted(true)
     setSending(false)
     toast.success('Thank you for your feedback!')

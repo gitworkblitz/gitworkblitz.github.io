@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
@@ -12,88 +12,91 @@ import {
   Trophy as TrophyIcon, FileText as DocumentTextIcon, Truck as TruckIcon,
   TrendingUp as ArrowTrendingUpIcon, Eye as EyeIcon, Rocket as RocketLaunchIcon,
   BarChart as ChartBarIcon, ArrowRight as ArrowRightIcon, Sparkles as SparklesIcon,
-  BadgeCheck as CheckBadgeIcon, MessageCircle
+  BadgeCheck as CheckBadgeIcon, MessageCircle, Search, Zap, Receipt,
+  CreditCard, ShoppingBag, History, AlertCircle
 } from 'lucide-react'
 
 /* ──────────────────────────────────────────────
-   Animation variants
+   Animation variants (optimized — less stagger delay)
    ────────────────────────────────────────────── */
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.06, delayChildren: 0.05 }
+    transition: { staggerChildren: 0.04, delayChildren: 0.02 }
   }
 }
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 16, scale: 0.97 },
+  hidden: { opacity: 0, y: 12, scale: 0.98 },
   visible: {
     opacity: 1, y: 0, scale: 1,
-    transition: { type: 'spring', stiffness: 300, damping: 28 }
+    transition: { type: 'spring', stiffness: 350, damping: 30 }
   }
 }
 
 const sectionVariants = {
-  hidden: { opacity: 0, y: 12 },
+  hidden: { opacity: 0, y: 10 },
   visible: {
     opacity: 1, y: 0,
-    transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] }
+    transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] }
   }
 }
 
 const cardHover = {
-  scale: 1.03,
-  y: -3,
-  transition: { type: 'spring', stiffness: 400, damping: 25 }
+  scale: 1.02,
+  y: -2,
+  transition: { type: 'spring', stiffness: 400, damping: 28 }
 }
 
 /* ──────────────────────────────────────────────
    Sub-components (memoized)
    ────────────────────────────────────────────── */
-const StatCard = React.memo(function StatCard({ card, index }) {
+const StatCard = React.memo(function StatCard({ card }) {
   return (
     <motion.div variants={itemVariants} whileHover={cardHover} whileTap={{ scale: 0.98 }}>
       <Link
         to={card.to}
-        className="stat-card block bg-white dark:bg-gray-900 rounded-xl shadow-sm hover:shadow-md border border-gray-100 dark:border-gray-800 p-5 group transition-shadow"
+        className="stat-card flex flex-col justify-between bg-white dark:bg-gray-900 rounded-xl shadow-sm hover:shadow-md border border-gray-100 dark:border-gray-800 p-5 group transition-all duration-200 h-[140px] w-full"
       >
-        <div className="flex items-center justify-between mb-3">
-          <div className={`stat-icon-glow w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-br ${card.gradient} shadow-sm`}>
+        <div className="flex items-center justify-between">
+          <div className={`stat-icon-glow w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-br ${card.gradient} shadow-sm flex-shrink-0`}>
             <card.icon className="w-5.5 h-5.5 text-white" />
           </div>
           {card.pulse && (
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5 shrink-0">
               <span className="status-dot bg-amber-500" />
               <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wide">Live</span>
             </span>
           )}
         </div>
-        <p className="stat-value text-2xl font-bold text-gray-900 dark:text-white count-pop">
-          {card.value}
-        </p>
-        <div className="flex items-center justify-between mt-1">
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{card.label}</p>
-          <ArrowRightIcon className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 group-hover:text-primary-500 group-hover:translate-x-0.5 transition-all" />
+        <div>
+          <p className="stat-value text-2xl font-bold text-gray-900 dark:text-white count-pop leading-none mb-1">
+            {card.value !== undefined ? card.value : '--'}
+          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium truncate pr-2">{card.label}</p>
+            <ArrowRightIcon className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 group-hover:text-primary-500 group-hover:translate-x-0.5 transition-all shrink-0" />
+          </div>
         </div>
       </Link>
     </motion.div>
   )
 })
 
-const QuickActionButton = React.memo(function QuickActionButton({ action, index }) {
+const QuickActionButton = React.memo(function QuickActionButton({ action }) {
   return (
     <motion.div
       variants={itemVariants}
-      whileHover={{ scale: 1.04, y: -2 }}
-      whileTap={{ scale: 0.97 }}
+      whileHover={{ scale: 1.02, y: -1 }}
+      whileTap={{ scale: 0.98 }}
     >
       <Link
         to={action.to}
-        className={`quick-action ${action.color} rounded-full py-3.5 px-4 text-center text-sm font-semibold transition-all flex items-center justify-center gap-2`}
+        className={`quick-action ${action.color} rounded-xl py-3.5 px-4 text-center text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 w-full h-[48px]`}
       >
-        <action.icon className="w-4 h-4" />
-        {action.label}
+        <action.icon className="w-4 h-4 shrink-0" />
+        <span className="truncate">{action.label}</span>
       </Link>
     </motion.div>
   )
@@ -108,19 +111,19 @@ const BookingRow = React.memo(function BookingRow({ booking, getStatusConfig }) 
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
     >
       <Link to={`/bookings/${booking.id}`}
-        className="booking-row flex items-center justify-between p-3 rounded-xl group">
-        <div className="flex items-center gap-3">
+        className="booking-row flex items-center justify-between p-3 rounded-xl group h-[64px]">
+        <div className="flex items-center gap-3 overflow-hidden">
           <div className="w-10 h-10 bg-primary-50 dark:bg-primary-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
             <CalendarIcon className="w-5 h-5 text-primary-600" />
           </div>
-          <div>
-            <p className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-primary-600 transition-colors">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-primary-600 transition-colors truncate">
               {booking.service_title || 'Service'}
             </p>
-            <p className="text-xs text-gray-400">{booking.booking_date || 'N/A'} • {booking.time_slot || ''}</p>
+            <p className="text-xs text-gray-400 truncate">{booking.booking_date || 'N/A'} • {booking.time_slot || ''}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0 ml-4">
           <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-semibold ${statusConf.color}`}>
             <span className={`status-dot ${statusConf.dotColor}`} />
             {statusConf.label}
@@ -130,7 +133,7 @@ const BookingRow = React.memo(function BookingRow({ booking, getStatusConfig }) 
           ) : booking.status !== 'cancelled' ? (
             <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 font-semibold">Unpaid</span>
           ) : null}
-          <span className="text-sm font-bold text-gray-900 dark:text-white">
+          <span className="text-sm font-bold text-gray-900 dark:text-white whitespace-nowrap">
             {formatCurrencyINR(booking.amount || booking.price || 0)}
           </span>
         </div>
@@ -151,24 +154,15 @@ export default function DashboardPage() {
     appliedCount: 0, shortlistedCount: 0, rejectedCount: 0,
   })
   const [recentBookings, setRecentBookings] = useState([])
-  const [loading, setLoading] = useState(true) // true = show skeleton on first render until data arrives
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const retryRef = useRef(0)
 
   const loadDashData = useCallback(async () => {
     if (!user) return
     setError(null)
     try {
-      // Fetch bookings (bounded)
+      // Fetch bookings (bounded) — no retry / no setTimeout
       const bookings = await getUserBookings(user.uid, 50)
-
-      // If bookings are empty and this is the first attempt, retry once
-      // (handles slow Firestore cold-start or network lag)
-      if (bookings.length === 0 && retryRef.current < 1) {
-        retryRef.current++
-        setTimeout(() => loadDashData(), 1500)
-        return
-      }
 
       setRecentBookings(bookings.slice(0, 5))
 
@@ -247,7 +241,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (user) {
-      retryRef.current = 0
       loadDashData()
     }
   }, [user, loadDashData])
@@ -268,60 +261,78 @@ export default function DashboardPage() {
 
     if (isCustomer) {
       cards.push(
-        { label: 'Total Bookings', value: stats.bookings, icon: CalendarIcon, gradient: 'from-blue-500 to-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20', textColor: 'text-blue-600 dark:text-blue-400', to: '/dashboard/bookings' },
-        { label: 'Active Bookings', value: stats.activeBookings, icon: ClockIcon, gradient: 'from-amber-500 to-orange-500', bg: 'bg-amber-50 dark:bg-amber-900/20', textColor: 'text-amber-600 dark:text-amber-400', to: '/dashboard/bookings', pulse: stats.activeBookings > 0 },
-        { label: 'Completed', value: stats.completed, icon: CheckCircleIcon, gradient: 'from-emerald-500 to-green-600', bg: 'bg-emerald-50 dark:bg-emerald-900/20', textColor: 'text-emerald-600 dark:text-emerald-400', to: '/dashboard/bookings' },
-        { label: 'Invoices', value: stats.invoiceCount, icon: DocumentTextIcon, gradient: 'from-violet-500 to-purple-600', bg: 'bg-violet-50 dark:bg-violet-900/20', textColor: 'text-violet-600 dark:text-violet-400', to: '/invoices' },
+        { label: 'Total Bookings', value: stats.bookings, icon: CalendarIcon, gradient: 'from-blue-500 to-blue-600', to: '/dashboard/bookings' },
+        { label: 'Pending', value: stats.pending, icon: ClockIcon, gradient: 'from-amber-500 to-orange-500', to: '/dashboard/bookings', pulse: stats.pending > 0 },
+        { label: 'Completed', value: stats.completed, icon: CheckCircleIcon, gradient: 'from-emerald-500 to-green-600', to: '/dashboard/bookings' },
+        { label: 'Payments Due', value: stats.pendingPayments, icon: CreditCard, gradient: 'from-violet-500 to-purple-600', to: '/payments', pulse: stats.pendingPayments > 0 },
       )
     }
 
     if (isWorker) {
       cards.push(
-        { label: 'My Services', value: stats.services, icon: WrenchScrewdriverIcon, gradient: 'from-blue-500 to-indigo-600', bg: 'bg-blue-50 dark:bg-blue-900/20', textColor: 'text-blue-600 dark:text-blue-400', to: '/dashboard/services' },
-        { label: 'Total Bookings', value: stats.bookings, icon: CalendarIcon, gradient: 'from-violet-500 to-purple-600', bg: 'bg-violet-50 dark:bg-violet-900/20', textColor: 'text-violet-600 dark:text-violet-400', to: '/dashboard/bookings' },
-        { label: 'Pending / Accepted', value: stats.pending, icon: ClockIcon, gradient: 'from-amber-500 to-orange-500', bg: 'bg-amber-50 dark:bg-amber-900/20', textColor: 'text-amber-600 dark:text-amber-400', to: '/dashboard/bookings', pulse: stats.pending > 0 },
-        { label: 'Earnings', value: formatCurrencyINR(stats.revenue), icon: CurrencyRupeeIcon, gradient: 'from-emerald-500 to-green-600', bg: 'bg-emerald-50 dark:bg-emerald-900/20', textColor: 'text-emerald-600 dark:text-emerald-400', to: '/payments', isCurrency: true },
+        { label: 'My Services', value: stats.services, icon: WrenchScrewdriverIcon, gradient: 'from-blue-500 to-indigo-600', to: '/dashboard/services' },
+        { label: 'Total Bookings', value: stats.bookings, icon: CalendarIcon, gradient: 'from-violet-500 to-purple-600', to: '/dashboard/bookings' },
+        { label: 'Pending / Accepted', value: stats.pending, icon: ClockIcon, gradient: 'from-amber-500 to-orange-500', to: '/dashboard/bookings', pulse: stats.pending > 0 },
+        { label: 'Earnings', value: formatCurrencyINR(stats.revenue), icon: CurrencyRupeeIcon, gradient: 'from-emerald-500 to-green-600', to: '/payments', isCurrency: true },
       )
     }
 
     if (isEmployer) {
       cards.push(
-        { label: 'Jobs Created', value: stats.jobs, icon: BriefcaseIcon, gradient: 'from-purple-500 to-violet-600', bg: 'bg-purple-50 dark:bg-purple-900/20', textColor: 'text-purple-600 dark:text-purple-400', to: '/dashboard/jobs' },
-        { label: 'Gigs Created', value: stats.gigs, icon: RocketLaunchIcon, gradient: 'from-orange-500 to-red-500', bg: 'bg-orange-50 dark:bg-orange-900/20', textColor: 'text-orange-600 dark:text-orange-400', to: '/dashboard/gigs' },
-        { label: 'Applications', value: stats.applications, icon: UserGroupIcon, gradient: 'from-blue-500 to-cyan-500', bg: 'bg-blue-50 dark:bg-blue-900/20', textColor: 'text-blue-600 dark:text-blue-400', to: '/dashboard/jobs' },
-        { label: 'Total Spent', value: formatCurrencyINR(stats.revenue), icon: CurrencyRupeeIcon, gradient: 'from-emerald-500 to-green-600', bg: 'bg-emerald-50 dark:bg-emerald-900/20', textColor: 'text-emerald-600 dark:text-emerald-400', to: '/payments', isCurrency: true },
+        { label: 'Jobs Created', value: stats.jobs, icon: BriefcaseIcon, gradient: 'from-purple-500 to-violet-600', to: '/dashboard/jobs' },
+        { label: 'Gigs Created', value: stats.gigs, icon: RocketLaunchIcon, gradient: 'from-orange-500 to-red-500', to: '/dashboard/gigs' },
+        { label: 'Applications', value: stats.applications, icon: UserGroupIcon, gradient: 'from-blue-500 to-cyan-500', to: '/dashboard/jobs' },
+        { label: 'Total Spent', value: formatCurrencyINR(stats.revenue), icon: CurrencyRupeeIcon, gradient: 'from-emerald-500 to-green-600', to: '/payments', isCurrency: true },
       )
     }
 
     if (cards.length === 0) {
       cards.push(
-        { label: 'Total Bookings', value: stats.bookings, icon: CalendarIcon, gradient: 'from-blue-500 to-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20', textColor: 'text-blue-600 dark:text-blue-400', to: '/dashboard/bookings' },
-        { label: 'Pending', value: stats.pending, icon: ClockIcon, gradient: 'from-amber-500 to-orange-500', bg: 'bg-amber-50 dark:bg-amber-900/20', textColor: 'text-amber-600 dark:text-amber-400', to: '/dashboard/bookings' },
-        { label: 'Completed', value: stats.completed, icon: CheckCircleIcon, gradient: 'from-emerald-500 to-green-600', bg: 'bg-emerald-50 dark:bg-emerald-900/20', textColor: 'text-emerald-600 dark:text-emerald-400', to: '/dashboard/bookings' },
-        { label: 'Revenue', value: formatCurrencyINR(stats.revenue), icon: CurrencyRupeeIcon, gradient: 'from-violet-500 to-purple-600', bg: 'bg-violet-50 dark:bg-violet-900/20', textColor: 'text-violet-600 dark:text-violet-400', to: '/payments', isCurrency: true },
+        { label: 'Total Bookings', value: stats.bookings, icon: CalendarIcon, gradient: 'from-blue-500 to-blue-600', to: '/dashboard/bookings' },
+        { label: 'Pending', value: stats.pending, icon: ClockIcon, gradient: 'from-amber-500 to-orange-500', to: '/dashboard/bookings' },
+        { label: 'Completed', value: stats.completed, icon: CheckCircleIcon, gradient: 'from-emerald-500 to-green-600', to: '/dashboard/bookings' },
+        { label: 'Revenue', value: formatCurrencyINR(stats.revenue), icon: CurrencyRupeeIcon, gradient: 'from-violet-500 to-purple-600', to: '/payments', isCurrency: true },
       )
     }
 
     return cards
   }, [isCustomer, isWorker, isEmployer, stats])
 
+  const performanceStats = useMemo(() => {
+    return [
+      { value: userProfile?.rating || '4.5', label: 'Rating', isStar: true },
+      { value: userProfile?.total_reviews || stats.completed, label: 'Reviews' },
+      { value: stats.completed, label: 'Completed' },
+      { value: `${userProfile?.completion_rate || 95}%`, label: 'Completion' },
+      { value: `${userProfile?.experience_years || 3}yr`, label: 'Experience' },
+    ]
+  }, [userProfile, stats.completed])
+
+  const appStatusStats = useMemo(() => {
+    return [
+      { count: stats.appliedCount, label: 'Applied', bg: 'bg-amber-50 dark:bg-amber-900/10', border: 'border-amber-100 dark:border-amber-900/30', dotBg: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400', subtext: 'text-amber-600 dark:text-amber-400' },
+      { count: stats.shortlistedCount, label: 'Shortlisted', bg: 'bg-green-50 dark:bg-green-900/10', border: 'border-green-100 dark:border-green-900/30', dotBg: 'bg-green-500', text: 'text-green-700 dark:text-green-400', subtext: 'text-green-600 dark:text-green-400' },
+      { count: stats.rejectedCount, label: 'Rejected', bg: 'bg-red-50 dark:bg-red-900/10', border: 'border-red-100 dark:border-red-900/30', dotBg: 'bg-red-500', text: 'text-red-700 dark:text-red-400', subtext: 'text-red-600 dark:text-red-400' },
+    ]
+  }, [stats.appliedCount, stats.shortlistedCount, stats.rejectedCount])
+
   const quickActions = useMemo(() => {
     const actions = []
     if (isCustomer) {
       actions.push(
-        { label: 'Find Services', icon: SparklesIcon, to: '/services', color: 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/30' },
+        { label: 'Book Service', icon: ShoppingBag, to: '/services', color: 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-sm hover:shadow-md' },
         { label: 'Find Workers', icon: UserGroupIcon, to: '/find-workers', color: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30' },
       )
     }
     if (isWorker) {
       actions.push(
-        { label: 'Add Service', icon: WrenchScrewdriverIcon, to: '/services/create', color: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/30' },
+        { label: 'Add Service', icon: WrenchScrewdriverIcon, to: '/services/create', color: 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-sm hover:shadow-md' },
       )
     }
     if (isEmployer) {
       actions.push(
-        { label: 'Post Job', icon: BriefcaseIcon, to: '/jobs/create', color: 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/30' },
-        { label: 'Post Gig', icon: RocketLaunchIcon, to: '/gigs/create', color: 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/30' },
+        { label: 'Post Job', icon: BriefcaseIcon, to: '/jobs/create', color: 'bg-gradient-to-r from-purple-500 to-violet-600 text-white shadow-sm hover:shadow-md' },
+        { label: 'Post Gig', icon: RocketLaunchIcon, to: '/gigs/create', color: 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-sm hover:shadow-md' },
       )
     }
     actions.push(
@@ -389,7 +400,7 @@ export default function DashboardPage() {
             <motion.span
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.3, type: 'spring', stiffness: 500 }}
+              transition={{ delay: 0.2, type: 'spring', stiffness: 500 }}
               className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 capitalize"
             >
               <CheckBadgeIcon className="w-3.5 h-3.5" />
@@ -405,7 +416,7 @@ export default function DashboardPage() {
       {/* Stats Grid */}
       <motion.div variants={containerVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {statCards.map((card, i) => (
-          <StatCard key={i} card={card} index={i} />
+          <StatCard key={i} card={card} />
         ))}
       </motion.div>
 
@@ -469,64 +480,50 @@ export default function DashboardPage() {
 
       {/* Worker Performance Section */}
       {isWorker && (
-        <motion.div
-          variants={sectionVariants}
-          className="bg-gradient-to-r from-primary-600 via-violet-600 to-purple-600 rounded-2xl p-6 mb-8 text-white shadow-xl perf-banner"
+        <div
+          className="bg-gradient-to-r from-primary-600 via-violet-600 to-purple-600 rounded-xl p-6 mb-8 text-white shadow-card overflow-hidden"
         >
           <h2 className="font-semibold mb-4 flex items-center gap-2">
             <TrophyIcon className="w-5 h-5" /> Performance Stats
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {[
-              { value: userProfile?.rating || '4.5', label: 'Rating', isStar: true },
-              { value: userProfile?.total_reviews || stats.completed, label: 'Reviews' },
-              { value: stats.completed, label: 'Completed' },
-              { value: `${userProfile?.completion_rate || 95}%`, label: 'Completion' },
-              { value: `${userProfile?.experience_years || 3}yr`, label: 'Experience' },
-            ].map((item, i) => (
-              <motion.div
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            {performanceStats.map((item, i) => (
+              <div
                 key={i}
-                whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.18)' }}
-                className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center transition-colors"
+                className="bg-white/10 backdrop-blur-sm rounded-xl p-4 flex flex-col justify-center text-center transition-all duration-200 hover:shadow-md hover:bg-white/15 w-full min-w-0 h-[120px] min-h-[120px]"
               >
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  {item.isStar && <Star fill="currentColor" className="w-4 h-4 text-yellow-300" />}
-                  <span className="text-2xl font-bold">{item.value}</span>
+                <div className="flex items-center justify-center gap-1.5 mb-2">
+                  {item.isStar && <Star fill="currentColor" className="w-5 h-5 text-yellow-300" />}
+                  <span className="text-3xl font-bold truncate">{item.value !== undefined ? item.value : '--'}</span>
                 </div>
-                <p className="text-white/70 text-xs">{item.label}</p>
-              </motion.div>
+                <p className="text-white/80 text-sm font-medium truncate">{item.label}</p>
+              </div>
             ))}
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Employer: Application Status Breakdown */}
       {isEmployer && stats.applications > 0 && (
-        <motion.div
-          variants={sectionVariants}
-          className="bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100 dark:border-gray-800 p-6 mb-8"
+        <div
+          className="bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-6 mb-8 overflow-hidden"
         >
           <h2 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <ChartBarIcon className="w-5 h-5 text-purple-500" />
             Application Status
           </h2>
           <div className="grid grid-cols-3 gap-4">
-            {[
-              { count: stats.appliedCount, label: 'Applied', color: 'amber' },
-              { count: stats.shortlistedCount, label: 'Shortlisted', color: 'green' },
-              { count: stats.rejectedCount, label: 'Rejected', color: 'red' },
-            ].map((item, i) => (
-              <motion.div
+            {appStatusStats.map((item, i) => (
+              <div
                 key={i}
-                whileHover={{ scale: 1.03 }}
-                className={`text-center p-4 rounded-xl bg-${item.color}-50 dark:bg-${item.color}-900/10 border border-${item.color}-100 dark:border-${item.color}-900/30`}
+                className={`flex flex-col justify-center text-center p-4 rounded-xl ${item.bg} border ${item.border} transition-all duration-200 hover:shadow-md w-full min-w-0 h-[120px] min-h-[120px]`}
               >
-                <div className="flex items-center justify-center gap-1.5 mb-1">
-                  <span className={`status-dot bg-${item.color}-500`} />
-                  <span className={`text-2xl font-bold text-${item.color}-700 dark:text-${item.color}-400 count-pop`}>{item.count}</span>
+                <div className="flex items-center justify-center gap-1.5 mb-2">
+                  <span className={`status-dot ${item.dotBg} shrink-0`} />
+                  <span className={`text-3xl font-bold ${item.text} count-pop truncate`}>{item.count !== undefined ? item.count : '--'}</span>
                 </div>
-                <p className={`text-xs font-medium text-${item.color}-600 dark:text-${item.color}-400`}>{item.label}</p>
-              </motion.div>
+                <p className={`text-sm font-medium ${item.subtext} truncate`}>{item.label}</p>
+              </div>
             ))}
           </div>
           {/* Progress bar */}
@@ -552,7 +549,7 @@ export default function DashboardPage() {
               />
             </div>
           )}
-        </motion.div>
+        </div>
       )}
 
       {/* Pending Payments Alert */}
@@ -589,12 +586,12 @@ export default function DashboardPage() {
         className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 mb-8"
       >
         <h2 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <RocketLaunchIcon className="w-5 h-5 text-orange-500" />
+          <Zap className="w-5 h-5 text-orange-500" />
           Quick Actions
         </h2>
-        <motion.div variants={containerVariants} className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <motion.div variants={containerVariants} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {quickActions.map((action, i) => (
-            <QuickActionButton key={i} action={action} index={i} />
+            <QuickActionButton key={i} action={action} />
           ))}
         </motion.div>
       </motion.div>
@@ -606,8 +603,8 @@ export default function DashboardPage() {
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <CalendarIcon className="w-5 h-5 text-blue-500" />
-            Recent Bookings
+            <History className="w-5 h-5 text-blue-500" />
+            Recent Activity
           </h2>
           <Link to="/dashboard/bookings" className="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center gap-1 group">
             View all <ArrowRightIcon className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
@@ -636,8 +633,6 @@ export default function DashboardPage() {
         )}
       </motion.div>
 
-
     </motion.div>
   )
 }
-

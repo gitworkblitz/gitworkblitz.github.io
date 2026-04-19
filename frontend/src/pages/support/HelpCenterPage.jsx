@@ -37,7 +37,7 @@ export default function HelpCenterPage() {
   return (
     <div className="min-h-screen">
       {/* Hero */}
-      <section className="bg-gradient-to-br from-primary-700 via-primary-600 to-primary-800 text-white py-20">
+      <section className="relative bg-gradient-to-br from-primary-700 via-primary-600 to-primary-800 text-white py-20 overflow-hidden">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur rounded-full px-4 py-2 text-sm font-medium text-primary-100 mb-6">
             <BookOpenIcon className="w-4 h-4" /> Support Center
@@ -51,7 +51,7 @@ export default function HelpCenterPage() {
               className="w-full pl-12 pr-4 py-4 rounded-xl bg-white text-gray-900 text-sm focus:outline-none focus:ring-4 focus:ring-primary-400/30 shadow-lg" />
           </div>
         </div>
-        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gray-50" style={{ clipPath: 'ellipse(55% 100% at 50% 100%)' }} />
+        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gray-50 dark:bg-gray-950" style={{ clipPath: 'ellipse(55% 100% at 50% 100%)' }} />
       </section>
 
       {/* Categories */}

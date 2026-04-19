@@ -104,7 +104,7 @@ export default function JobDetailsPage() {
           }
           resumeURL = await Promise.race([
             uploadTask(),
-            new Promise(resolve => setTimeout(() => resolve(URL.createObjectURL(formResume)), 1500))
+            new Promise(resolve => setTimeout(() => resolve(URL.createObjectURL(formResume)), 5000))
           ])
         } catch {
           resumeURL = URL.createObjectURL(formResume)

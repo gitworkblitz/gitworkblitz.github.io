@@ -29,8 +29,7 @@ export default function ContactPage() {
       return
     }
     setSending(true)
-    // Simulate API call
-    await new Promise(r => setTimeout(r, 1200))
+    // Instant — no artificial delay
     setSubmitted(true)
     setSending(false)
     toast.success('Message sent successfully!')
@@ -55,7 +54,7 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen">
       {/* Hero */}
-      <section className="bg-gradient-to-br from-primary-700 via-primary-600 to-primary-800 text-white py-20">
+      <section className="relative bg-gradient-to-br from-primary-700 via-primary-600 to-primary-800 text-white py-20 overflow-hidden">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div initial="hidden" animate="show" variants={{ show: { transition: { staggerChildren: 0.12 } } }}>
             <motion.div variants={fadeUp} className="inline-flex items-center gap-2 bg-white/10 backdrop-blur rounded-full px-4 py-2 text-sm font-medium text-primary-100 mb-6">
@@ -67,7 +66,7 @@ export default function ContactPage() {
             </motion.p>
           </motion.div>
         </div>
-        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gray-50" style={{ clipPath: 'ellipse(55% 100% at 50% 100%)' }} />
+        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gray-50 dark:bg-gray-950" style={{ clipPath: 'ellipse(55% 100% at 50% 100%)' }} />
       </section>
 
       {/* Content */}

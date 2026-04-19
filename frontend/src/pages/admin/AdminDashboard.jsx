@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  UsersIcon, WrenchScrewdriverIcon, BriefcaseIcon, CurrencyDollarIcon,
-  CalendarIcon, CreditCardIcon, RocketLaunchIcon, StarIcon,
-  ArrowTrendingUpIcon, ArrowRightIcon, ShieldCheckIcon,
-  ChartBarIcon, EyeIcon, DocumentTextIcon
-} from '@heroicons/react/24/outline'
-import { CheckBadgeIcon } from '@heroicons/react/24/solid'
+  Users as UsersIcon, Wrench as WrenchScrewdriverIcon, Briefcase as BriefcaseIcon,
+  DollarSign as CurrencyDollarIcon, Calendar as CalendarIcon, CreditCard as CreditCardIcon,
+  Rocket as RocketLaunchIcon, Star as StarIcon, TrendingUp as ArrowTrendingUpIcon,
+  ArrowRight as ArrowRightIcon, ShieldCheck as ShieldCheckIcon,
+  BarChart3 as ChartBarIcon, Eye as EyeIcon, FileText as DocumentTextIcon,
+  BadgeCheck as CheckBadgeIcon
+} from 'lucide-react'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Area, AreaChart } from 'recharts'
 import { getCollectionCount, getRecentDocuments } from '../../services/firestoreService'
 import { dummyUsers, dummyServices, dummyBookings, dummyJobs, dummyGigs, formatCurrencyINR } from '../../utils/dummyData'

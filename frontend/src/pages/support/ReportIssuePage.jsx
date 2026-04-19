@@ -34,7 +34,7 @@ export default function ReportIssuePage() {
       return
     }
     setSending(true)
-    await new Promise(r => setTimeout(r, 1200))
+    // Instant — no artificial delay
     setSubmitted(true)
     setSending(false)
     toast.success('Issue reported successfully!')

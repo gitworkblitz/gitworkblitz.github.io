@@ -1,13 +1,13 @@
 import React, { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import toast from 'react-hot-toast'
-import { Cog6ToothIcon, EnvelopeIcon, ShieldCheckIcon, BellIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import { Settings as Cog6ToothIcon, Mail as EnvelopeIcon, ShieldCheck as ShieldCheckIcon, Bell as BellIcon, CheckCircle as CheckCircleIcon } from 'lucide-react'
 
 export default function AdminSettings() {
   const { userProfile } = useAuth()
   const [settings, setSettings] = useState({
     platformName: 'WorkSphere',
-    adminEmail: import.meta.env.VITE_ADMIN_EMAIL || 'worksphere@gmail.com',
+    adminEmail: import.meta.env.VITE_ADMIN_EMAIL || 'worksphere.admin@gmail.com',
     maintenanceMode: false,
     emailNotifications: true,
     autoApproveReviews: false,
