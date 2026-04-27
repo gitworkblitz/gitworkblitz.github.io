@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useSettings } from '../../context/SettingsContext'
 import { EnvelopeIcon, LockClosedIcon, UserIcon, PhoneIcon, MapPinIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 
 import { ShoppingBagIcon, WrenchScrewdriverIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline'
@@ -13,6 +14,7 @@ const ROLES = [
 
 export default function SignupPage() {
   const { signup, getRedirectPath } = useAuth()
+  const { settings } = useSettings()
   const navigate = useNavigate()
   const [form, setForm] = useState({
     name: '', email: '', password: '', confirmPassword: '',
@@ -22,6 +24,9 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [step, setStep] = useState(1) // 1 = role, 2 = details
+
+  const platformName = settings?.platformName || 'WorkSphere'
+  const brandInitials = platformName.substring(0, 2).toUpperCase()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -40,8 +45,8 @@ export default function SignupPage() {
         name: form.name, email: form.email, password: form.password,
         phone: form.phone, location: form.location, userType: form.userType
       })
-      const redirectPath = getRedirectPath(profile)
-      navigate(redirectPath, { replace: true })
+      // Direct newly registered users to profile setup
+      navigate('/profile', { replace: true })
     } catch (err) {
       const msg = err.message || ''
       if (msg.includes('email-already-in-use')) {
@@ -67,15 +72,15 @@ export default function SignupPage() {
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
-              <span className="text-2xl font-bold">WS</span>
+              <span className="text-2xl font-bold">{brandInitials}</span>
             </div>
-            <span className="text-3xl font-bold">WorkSphere</span>
+            <span className="text-3xl font-bold">{platformName}</span>
           </div>
           <h2 className="text-4xl font-extrabold leading-tight mb-4">
             Join India's growing<br />workforce platform
           </h2>
           <p className="text-primary-100 text-lg mb-10 max-w-md leading-relaxed">
-            Whether you need a service, want to offer your skills, or are hiring talent — WorkSphere connects you with the right people.
+            Whether you need a service, want to offer your skills, or are hiring talent — {platformName} connects you with the right people.
           </p>
           <div className="grid grid-cols-3 gap-4">
             {[
@@ -98,9 +103,9 @@ export default function SignupPage() {
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2 mb-6 justify-center">
             <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg">WS</span>
+              <span className="text-white font-bold text-lg">{brandInitials}</span>
             </div>
-            <span className="font-bold text-gray-900 text-2xl">WorkSphere</span>
+            <span className="font-bold text-gray-900 text-2xl">{platformName}</span>
           </div>
 
           <div className="bg-white rounded-2xl shadow-card p-6">
@@ -115,7 +120,7 @@ export default function SignupPage() {
               <>
                 <div className="text-center mb-4">
                   <h1 className="text-2xl font-bold text-gray-900 mb-2">Choose Your Role</h1>
-                  <p className="text-gray-500 text-sm">How will you use WorkSphere?</p>
+                  <p className="text-gray-500 text-sm">How will you use {platformName}?</p>
                 </div>
                 <div className="space-y-2 mb-4">
                   {ROLES.map(r => (

@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
+import { useSettings } from '../context/SettingsContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import NotificationBell from '../components/NotificationBell'
 import {
@@ -18,6 +19,7 @@ import {
    ────────────────────────────────────────────── */
 const SidebarContent = React.memo(function SidebarContent({ onClose }) {
   const { user, userProfile, logout, isWorker, isEmployer, isCustomer, isAdmin } = useAuth()
+  const { settings } = useSettings()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -66,6 +68,9 @@ const SidebarContent = React.memo(function SidebarContent({ onClose }) {
   const userName = useMemo(() => userProfile?.name || 'User', [userProfile?.name])
   const userInitial = useMemo(() => (userName[0] || 'U').toUpperCase(), [userName])
   const userRole = useMemo(() => userProfile?.user_type || 'customer', [userProfile?.user_type])
+  
+  const platformName = settings?.platformName || 'WorkSphere'
+  const brandInitials = platformName.substring(0, 2).toUpperCase()
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800">
@@ -73,9 +78,9 @@ const SidebarContent = React.memo(function SidebarContent({ onClose }) {
       <div className="px-5 py-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 group">
           <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow duration-300">
-            <span className="text-white font-bold text-sm tracking-tight">WS</span>
+            <span className="text-white font-bold text-sm tracking-tight">{brandInitials}</span>
           </div>
-          <span className="font-bold text-gray-900 dark:text-white text-lg tracking-tight">WorkSphere</span>
+          <span className="font-bold text-gray-900 dark:text-white text-lg tracking-tight">{platformName}</span>
         </Link>
         {onClose && (
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 md:hidden p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
@@ -178,15 +183,35 @@ const SidebarContent = React.memo(function SidebarContent({ onClose }) {
 const DashboardTopBar = React.memo(function DashboardTopBar() {
   const { userProfile } = useAuth()
   const { darkMode, toggleTheme } = useTheme()
+  const location = useLocation()
   const userName = useMemo(() => (userProfile?.name || 'User').split(' ')[0], [userProfile?.name])
   const userInitial = useMemo(() => (userName[0] || 'U').toUpperCase(), [userName])
 
+  const breadcrumbs = useMemo(() => {
+    const paths = location.pathname.split('/').filter(Boolean)
+    if (paths.length === 0) return []
+    return paths.map((path, index) => {
+      const isLast = index === paths.length - 1
+      const label = path.charAt(0).toUpperCase() + path.slice(1).replace(/-/g, ' ')
+      return {
+        label: label,
+        isLast
+      }
+    })
+  }, [location.pathname])
+
   return (
     <div className="hidden md:flex items-center justify-between h-16 px-6 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
-      {/* Left: Search hint */}
-      <div className="flex items-center gap-3 text-gray-400 dark:text-gray-500">
-        <Search className="w-4 h-4" />
-        <span className="text-sm">Quick search…</span>
+      {/* Left: Breadcrumbs */}
+      <div className="flex items-center gap-2 text-sm">
+        {breadcrumbs.map((crumb, idx) => (
+          <React.Fragment key={idx}>
+            {idx > 0 && <span className="text-gray-400 dark:text-gray-600">/</span>}
+            <span className={`${crumb.isLast ? 'font-semibold text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+              {crumb.label}
+            </span>
+          </React.Fragment>
+        ))}
       </div>
 
       {/* Right: Controls */}
@@ -198,7 +223,7 @@ const DashboardTopBar = React.memo(function DashboardTopBar() {
 
         <NotificationBell />
 
-        <Link to="/dashboard" className="flex items-center gap-2 ml-1 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+        <Link to="/profile" className="flex items-center gap-2 ml-1 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary-400 to-violet-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
             {userInitial}
           </div>
@@ -214,6 +239,7 @@ const DashboardTopBar = React.memo(function DashboardTopBar() {
    ────────────────────────────────────────────── */
 export default function DashboardLayout() {
   const { userProfile } = useAuth()
+  const { settings } = useSettings()
   const [open, setOpen] = useState(false)
 
   return (
@@ -260,9 +286,9 @@ export default function DashboardLayout() {
           </button>
           <Link to="/" className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center shadow-sm">
-              <span className="text-white font-bold text-xs">WS</span>
+              <span className="text-white font-bold text-xs">{settings?.platformName ? settings.platformName.substring(0, 2).toUpperCase() : 'WS'}</span>
             </div>
-            <span className="font-bold text-primary-600 text-lg">WorkSphere</span>
+            <span className="font-bold text-primary-600 text-lg">{settings?.platformName || 'WorkSphere'}</span>
           </Link>
           <Link to="/profile">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-violet-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">

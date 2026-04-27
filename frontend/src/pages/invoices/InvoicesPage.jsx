@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import { useAuth } from '../../context/AuthContext'
 import { getUserInvoices } from '../../services/firestoreService'
 import { formatCurrencyINR } from '../../utils/dummyData'
@@ -26,6 +27,10 @@ export default function InvoicesPage() {
   useEffect(() => {
     if (user) loadInvoices()
   }, [user, loadInvoices])
+
+  useEffect(() => {
+    document.title = 'Invoices | WorkSphere'
+  }, [])
 
   if (loading) return <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8"><TableSkeleton rows={3} /></div>
 

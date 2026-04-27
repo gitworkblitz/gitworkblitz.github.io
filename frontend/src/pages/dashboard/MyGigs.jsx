@@ -118,23 +118,23 @@ export default function MyGigs() {
             const appCount = applicantCounts[g.id] ?? 0
             const statusStyle = getStatusStyle(g.status)
             return (
-              <div key={g.id} className="stat-card dash-card-enter bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-5 group">
+              <div key={g.id} style={{ animationDelay: `${i * 0.05}s` }} className="animate-slide-up bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-5 group hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start gap-3">
-                      <div className="stat-icon-glow w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
                         <RocketLaunchIcon className="w-5 h-5 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 dark:text-white text-base group-hover:text-primary-600 transition-colors">{g.title}</h3>
+                        <Link to={`/gigs/${g.id}`} className="font-semibold text-gray-900 dark:text-white text-base hover:text-primary-600 dark:hover:text-primary-400 transition-colors">{g.title}</Link>
                         <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                          <span>{g.category || 'General'}</span>
+                          <span className="font-medium text-gray-700 dark:text-gray-300">{g.category || 'General'}</span>
                           {g.location && <span>• {g.location}</span>}
                           {g.duration && <span>• {g.duration}</span>}
                         </div>
-                        <div className="flex flex-wrap gap-1.5 mt-2">
+                        <div className="flex flex-wrap gap-1.5 mt-2.5">
                           {(g.skills || []).slice(0, 5).map(s => (
-                            <span key={s} className="text-xs bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-2 py-0.5 rounded-full">
+                            <span key={s} className="text-xs bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 px-2.5 py-0.5 rounded-full font-medium">
                               {s}
                             </span>
                           ))}
@@ -145,11 +145,10 @@ export default function MyGigs() {
 
                   <div className="flex flex-col items-end gap-3 flex-shrink-0">
                     <div className="text-right">
-                      <p className="font-bold text-primary-600 flex items-center gap-0.5">
-                        <CurrencyRupeeIcon className="w-4 h-4" />
+                      <p className="font-bold text-primary-600 dark:text-primary-400 flex items-center justify-end gap-0.5 text-lg">
                         {formatCurrencyINR(g.budget || g.price || 0)}
                       </p>
-                      <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-medium mt-1 capitalize ${statusStyle.color}`}>
+                      <span className={`inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-full font-bold mt-1 capitalize ${statusStyle.color}`}>
                         <span className={`status-dot ${statusStyle.dot}`} />
                         {statusStyle.label}
                       </span>
@@ -157,7 +156,7 @@ export default function MyGigs() {
 
                     <Link
                       to={`/gigs/${g.id}/applicants`}
-                      className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-all shadow-sm hover:shadow-md"
+                      className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 rounded-xl hover:border-primary-300 hover:text-primary-600 transition-all shadow-sm"
                     >
                       <UserGroupIcon className="w-4 h-4" />
                       {appCount} Applicant{appCount !== 1 ? 's' : ''}

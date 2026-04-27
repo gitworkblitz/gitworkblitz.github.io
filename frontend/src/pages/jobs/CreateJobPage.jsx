@@ -8,7 +8,12 @@ import toast from 'react-hot-toast'
 export default function CreateJobPage() {
   const { user, userProfile } = useAuth()
   const navigate = useNavigate()
-  const { register, handleSubmit, formState: { errors } } = useForm()
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    defaultValues: {
+      company: userProfile?.company || '',
+      location: userProfile?.location || '',
+    }
+  })
   const [loading, setLoading] = useState(false)
   const [skills, setSkills] = useState([])
   const [skillInput, setSkillInput] = useState('')

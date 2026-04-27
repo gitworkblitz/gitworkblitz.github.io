@@ -99,30 +99,30 @@ export default function MyJobs() {
           {jobs.map((j, i) => {
             const appCount = applicantCounts[j.id] ?? 0
             return (
-              <div key={j.id} className="stat-card dash-card-enter bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-5 group">
+              <div key={j.id} style={{ animationDelay: `${i * 0.05}s` }} className="animate-slide-up bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-5 group hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start gap-3">
-                      <div className="stat-icon-glow w-10 h-10 bg-gradient-to-br from-purple-500 to-violet-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-violet-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
                         <BriefcaseIcon className="w-5 h-5 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 dark:text-white text-base group-hover:text-primary-600 transition-colors">{j.title}</h3>
+                        <Link to={`/jobs/${j.id}`} className="font-semibold text-gray-900 dark:text-white text-base hover:text-primary-600 dark:hover:text-primary-400 transition-colors">{j.title}</Link>
                         <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                          <span className="font-medium">{j.company}</span>
+                          <span className="font-medium text-gray-700 dark:text-gray-300">{j.company}</span>
                           {j.location && (
                             <span className="flex items-center gap-1">
                               <MapPinIcon className="w-3.5 h-3.5" />
                               {j.location}
                             </span>
                           )}
-                          <span className="capitalize text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full">
+                          <span className="capitalize text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full font-medium">
                             {(j.employment_type || j.type || 'full_time').replace(/_/g, ' ')}
                           </span>
                         </div>
-                        <div className="flex flex-wrap gap-1.5 mt-2">
+                        <div className="flex flex-wrap gap-1.5 mt-2.5">
                           {(j.skills_required || []).slice(0, 5).map(s => (
-                            <span key={s} className="text-xs bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full">
+                            <span key={s} className="text-xs bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 px-2.5 py-0.5 rounded-full font-medium">
                               {s}
                             </span>
                           ))}
@@ -132,7 +132,7 @@ export default function MyJobs() {
                   </div>
 
                   <div className="flex flex-col items-end gap-3 flex-shrink-0">
-                    <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold ${
+                    <span className={`inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-full font-bold ${
                       j.is_active !== false
                         ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
                         : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
@@ -147,7 +147,7 @@ export default function MyJobs() {
 
                     <Link
                       to={`/jobs/${j.id}/applicants`}
-                      className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-all shadow-sm hover:shadow-md"
+                      className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 rounded-xl hover:border-primary-300 hover:text-primary-600 transition-all shadow-sm"
                     >
                       <UserGroupIcon className="w-4 h-4" />
                       {appCount} Applicant{appCount !== 1 ? 's' : ''}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Users as UsersIcon, Wrench as WrenchScrewdriverIcon, Briefcase as BriefcaseIcon,
@@ -8,10 +8,11 @@ import {
   BarChart3 as ChartBarIcon, Eye as EyeIcon, FileText as DocumentTextIcon,
   BadgeCheck as CheckBadgeIcon
 } from 'lucide-react'
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Area, AreaChart } from 'recharts'
 import { getCollectionCount, getRecentDocuments } from '../../services/firestoreService'
 import { dummyUsers, dummyServices, dummyBookings, dummyJobs, dummyGigs, formatCurrencyINR } from '../../utils/dummyData'
 import { DashboardSkeleton } from '../../components/SkeletonLoader'
+
+const AdminCharts = lazy(() => import('./AdminCharts'))
 import ErrorState from '../../components/ErrorState'
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444']
@@ -25,20 +26,7 @@ const generateMonthlyData = (totalBookings, totalRevenue) => {
   }))
 }
 
-// Custom tooltip component for charts
-const CustomTooltip = ({ active, payload, label, valuePrefix = '', valueSuffix = '' }) => {
-  if (!active || !payload?.length) return null
-  return (
-    <div className="bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">
-      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{label}</p>
-      {payload.map((p, i) => (
-        <p key={i} className="text-sm font-bold" style={{ color: p.color }}>
-          {valuePrefix}{typeof p.value === 'number' ? p.value.toLocaleString('en-IN') : p.value}{valueSuffix}
-        </p>
-      ))}
-    </div>
-  )
-}
+
 
 // Default/fallback stats — shown INSTANTLY while Firestore loads in background
 const DEFAULT_STATS = {
@@ -85,9 +73,9 @@ export default function AdminDashboard() {
 
       // Only fetch what we actually need for computation
       const [bookings, users, payments] = await Promise.all([
-        getRecentDocuments('bookings', 50).catch(() => []),
-        getRecentDocuments('users', 50).catch(() => []),
-        getRecentDocuments('payments', 50).catch(() => []),
+        getRecentDocuments('bookings', 20).catch(() => []),
+        getRecentDocuments('users', 20).catch(() => []),
+        getRecentDocuments('payments', 20).catch(() => []),
       ])
 
       const totalUsers = userCount > 0 ? userCount : dummyUsers.length
@@ -260,130 +248,44 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="dash-section chart-card bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <ArrowTrendingUpIcon className="w-5 h-5 text-emerald-500" />
-              Monthly Revenue
+      <Suspense fallback={<div className="h-64 w-full bg-gray-100 dark:bg-gray-800 animate-pulse rounded-xl mb-6 flex items-center justify-center text-gray-400">Loading charts...</div>}>
+        <AdminCharts stats={stats} pieData={pieData}>
+          <div className="lg:col-span-2 dash-section bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-5">
+            <h2 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <EyeIcon className="w-5 h-5 text-violet-500" />
+              Quick Management
             </h2>
-            <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-full">
-              ₹ INR
-            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[
+                { label: 'Manage Users', desc: 'View, suspend, change roles', to: '/admin/users', icon: UsersIcon, gradient: 'from-blue-500 to-blue-600', bg: 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20' },
+                { label: 'Manage Services', desc: 'Review and moderate listings', to: '/admin/services', icon: WrenchScrewdriverIcon, gradient: 'from-green-500 to-green-600', bg: 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20' },
+                { label: 'Manage Bookings', desc: 'Track all platform bookings', to: '/admin/bookings', icon: CalendarIcon, gradient: 'from-purple-500 to-purple-600', bg: 'border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-900/20' },
+                { label: 'Payments', desc: 'View revenue & transactions', to: '/admin/payments', icon: CreditCardIcon, gradient: 'from-emerald-500 to-teal-600', bg: 'border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/20' },
+                { label: 'Invoices', desc: 'View all platform invoices', to: '/admin/invoices', icon: DocumentTextIcon, gradient: 'from-violet-500 to-purple-600', bg: 'border-violet-200 bg-violet-50 dark:border-violet-800 dark:bg-violet-900/20' },
+                { label: 'Blog CMS', desc: 'Create, edit & publish blogs', to: '/admin/blogs', icon: ArrowTrendingUpIcon, gradient: 'from-indigo-500 to-blue-600', bg: 'border-indigo-200 bg-indigo-50 dark:border-indigo-800 dark:bg-indigo-900/20' },
+                { label: 'Manage Reviews', desc: 'Moderate user reviews', to: '/admin/reviews', icon: StarIcon, gradient: 'from-orange-500 to-orange-600', bg: 'border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-900/20' },
+                { label: 'Contact Messages', desc: 'View and respond to inquiries', to: '/admin/contacts', icon: DocumentTextIcon, gradient: 'from-cyan-500 to-cyan-600', bg: 'border-cyan-200 bg-cyan-50 dark:border-cyan-800 dark:bg-cyan-900/20' },
+                { label: 'User Feedback', desc: 'Track ratings and feedback', to: '/admin/feedback', icon: CheckBadgeIcon, gradient: 'from-pink-500 to-rose-600', bg: 'border-pink-200 bg-pink-50 dark:border-pink-800 dark:bg-pink-900/20' },
+                { label: 'Coupons/Offers', desc: 'Manage discounts & promos', to: '/admin/offers', icon: RocketLaunchIcon, gradient: 'from-fuchsia-500 to-pink-600', bg: 'border-fuchsia-200 bg-fuchsia-50 dark:border-fuchsia-800 dark:bg-fuchsia-900/20' },
+                { label: 'Announcements', desc: 'Broadcast global alerts', to: '/admin/announcements', icon: RocketLaunchIcon, gradient: 'from-red-500 to-orange-600', bg: 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20' },
+              ].map(({ label, desc, to, icon: ItemIcon, gradient, bg }) => (
+                <Link key={to} to={to} className={`quick-action p-4 rounded-xl border-2 ${bg} group flex items-start gap-3`}>
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center bg-gradient-to-br ${gradient} shadow-sm flex-shrink-0`}>
+                    <ItemIcon className="w-4.5 h-4.5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-gray-900 dark:text-white text-sm group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors flex items-center gap-1">
+                      {label}
+                      <ArrowRightIcon className="w-3.5 h-3.5 text-gray-300 group-hover:text-primary-500 group-hover:translate-x-0.5 transition-all" />
+                    </p>
+                    <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">{desc}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
-          <ResponsiveContainer width="100%" height={240}>
-            <AreaChart data={stats?.monthly_data || []}>
-              <defs>
-                <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} />
-              <Tooltip content={<CustomTooltip valuePrefix="₹" />} />
-              <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2.5} fill="url(#revenueGradient)" dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="dash-section chart-card bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <ChartBarIcon className="w-5 h-5 text-blue-500" />
-              Monthly Bookings
-            </h2>
-            <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-full">
-              Count
-            </span>
-          </div>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={stats?.monthly_data || []}>
-              <defs>
-                <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#3b82f6" />
-                  <stop offset="100%" stopColor="#6366f1" />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="bookings" fill="url(#barGradient)" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* User Distribution + Quick Management */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="dash-section chart-card bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-5">
-          <h2 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <UsersIcon className="w-5 h-5 text-blue-500" />
-            User Distribution
-          </h2>
-          <ResponsiveContainer width="100%" height={200}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                outerRadius={75}
-                innerRadius={45}
-                dataKey="value"
-                label={({ name, percent }) => `${name} ${(percent*100).toFixed(0)}%`}
-                labelLine={false}
-                strokeWidth={2}
-                stroke="#fff"
-              >
-                {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-          {/* Legend */}
-          <div className="flex flex-wrap justify-center gap-3 mt-2">
-            {pieData.map((entry, i) => (
-              <div key={entry.name} className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                <span className="text-xs text-gray-500 dark:text-gray-400">{entry.name} ({entry.value})</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="lg:col-span-2 dash-section bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-5">
-          <h2 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <EyeIcon className="w-5 h-5 text-violet-500" />
-            Quick Management
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {[
-              { label: 'Manage Users', desc: 'View, suspend, change roles', to: '/admin/users', icon: UsersIcon, gradient: 'from-blue-500 to-blue-600', bg: 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20' },
-              { label: 'Manage Services', desc: 'Review and moderate listings', to: '/admin/services', icon: WrenchScrewdriverIcon, gradient: 'from-green-500 to-green-600', bg: 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20' },
-              { label: 'Manage Bookings', desc: 'Track all platform bookings', to: '/admin/bookings', icon: CalendarIcon, gradient: 'from-purple-500 to-purple-600', bg: 'border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-900/20' },
-              { label: 'Manage Reviews', desc: 'Moderate user reviews', to: '/admin/reviews', icon: StarIcon, gradient: 'from-orange-500 to-orange-600', bg: 'border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-900/20' },
-              { label: 'Contact Messages', desc: 'View and respond to inquiries', to: '/admin/contacts', icon: DocumentTextIcon, gradient: 'from-cyan-500 to-cyan-600', bg: 'border-cyan-200 bg-cyan-50 dark:border-cyan-800 dark:bg-cyan-900/20' },
-              { label: 'User Feedback', desc: 'Track ratings and feedback', to: '/admin/feedback', icon: CheckBadgeIcon, gradient: 'from-pink-500 to-rose-600', bg: 'border-pink-200 bg-pink-50 dark:border-pink-800 dark:bg-pink-900/20' },
-            ].map(({ label, desc, to, icon: ItemIcon, gradient, bg }) => (
-              <Link key={to} to={to} className={`quick-action p-4 rounded-xl border-2 ${bg} group flex items-start gap-3`}>
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center bg-gradient-to-br ${gradient} shadow-sm flex-shrink-0`}>
-                  <ItemIcon className="w-4.5 h-4.5 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 dark:text-white text-sm group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors flex items-center gap-1">
-                    {label}
-                    <ArrowRightIcon className="w-3.5 h-3.5 text-gray-300 group-hover:text-primary-500 group-hover:translate-x-0.5 transition-all" />
-                  </p>
-                  <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">{desc}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </div>
+        </AdminCharts>
+      </Suspense>
     </div>
   )
 }

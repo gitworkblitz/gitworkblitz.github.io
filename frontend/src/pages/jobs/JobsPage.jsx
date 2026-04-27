@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
+import useSEO from '../../hooks/useSEO'
 import { Link } from 'react-router-dom'
 import { MagnifyingGlassIcon, PlusIcon, MapPinIcon, CurrencyDollarIcon, FunnelIcon, AcademicCapIcon, ArrowsUpDownIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { StarIcon as StarSolid, BriefcaseIcon, BuildingOffice2Icon, GlobeAltIcon, FireIcon } from '@heroicons/react/24/solid'
@@ -66,6 +67,13 @@ export default function JobsPage() {
   const [category, setCategory] = useState('All')
   const [sortBy, setSortBy] = useState('newest')
   const [visibleCount, setVisibleCount] = useState(12)
+
+  useSEO({
+    title: 'Jobs — Find Your Dream Job | WorkSphere',
+    description: 'Browse the latest job openings on WorkSphere. Find full-time, part-time, and remote jobs across India.',
+    keywords: 'jobs, hiring, careers, worksphere jobs, local jobs',
+    url: 'https://worksphere.com/jobs'
+  })
 
   const filtered = useMemo(() => {
     const range = SALARY_RANGES[salaryRange]

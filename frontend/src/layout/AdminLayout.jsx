@@ -5,7 +5,8 @@ import {
   Squares2X2Icon, UsersIcon, WrenchScrewdriverIcon, CalendarIcon,
   BriefcaseIcon, StarIcon, DocumentTextIcon, FlagIcon, Cog6ToothIcon,
   ArrowRightOnRectangleIcon, ChevronLeftIcon, Bars3Icon, XMarkIcon,
-  EnvelopeIcon, ChatBubbleLeftRightIcon
+  EnvelopeIcon, ChatBubbleLeftRightIcon, CreditCardIcon, ReceiptPercentIcon,
+  PencilSquareIcon, TicketIcon, MegaphoneIcon
 } from '@heroicons/react/24/outline'
 
 const sidebarLinks = [
@@ -15,6 +16,11 @@ const sidebarLinks = [
   { label: 'Bookings', to: '/admin/bookings', icon: CalendarIcon },
   { label: 'Jobs', to: '/admin/jobs', icon: BriefcaseIcon },
   { label: 'Gigs', to: '/admin/gigs', icon: StarIcon },
+  { label: 'Payments', to: '/admin/payments', icon: CreditCardIcon },
+  { label: 'Invoices', to: '/admin/invoices', icon: ReceiptPercentIcon },
+  { label: 'Blog CMS', to: '/admin/blogs', icon: PencilSquareIcon },
+  { label: 'Coupons & Offers', to: '/admin/offers', icon: TicketIcon },
+  { label: 'Announcements', to: '/admin/announcements', icon: MegaphoneIcon },
   { label: 'Reviews', to: '/admin/reviews', icon: DocumentTextIcon },
   { label: 'Reports', to: '/admin/reports', icon: FlagIcon },
   { label: 'Contact Messages', to: '/admin/contacts', icon: EnvelopeIcon },

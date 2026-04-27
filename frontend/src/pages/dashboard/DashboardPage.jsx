@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
 import { useDataCache } from '../../context/DataCacheContext'
+import { useSettings } from '../../context/SettingsContext'
 import { getUserBookings, getQueryCount, queryDocumentsLimited } from '../../services/firestoreService'
+import toast from 'react-hot-toast'
 import { formatCurrencyINR } from '../../utils/dummyData'
 import { DashboardSkeleton } from '../../components/SkeletonLoader'
 import ErrorState from '../../components/ErrorState'
+import BookingFormModal from '../../components/BookingFormModal'
 import {
   Calendar as CalendarIcon, IndianRupee as CurrencyRupeeIcon, Briefcase as BriefcaseIcon, Wrench as WrenchScrewdriverIcon,
   Users as UserGroupIcon, Clock as ClockIcon, CheckCircle as CheckCircleIcon, Star,
@@ -14,7 +17,8 @@ import {
   TrendingUp as ArrowTrendingUpIcon, Eye as EyeIcon, Rocket as RocketLaunchIcon,
   BarChart as ChartBarIcon, ArrowRight as ArrowRightIcon, Sparkles as SparklesIcon,
   BadgeCheck as CheckBadgeIcon, MessageCircle, Search, Zap, Receipt,
-  CreditCard, ShoppingBag, History, AlertCircle, Send, MapPin, IndianRupee
+  CreditCard, ShoppingBag, History, AlertCircle, Send, MapPin, IndianRupee,
+  Download, Loader2
 } from 'lucide-react'
 
 /* ──────────────────────────────────────────────
@@ -86,45 +90,55 @@ const StatCard = React.memo(function StatCard({ card }) {
 })
 
 const QuickActionButton = React.memo(function QuickActionButton({ action }) {
+  const content = (
+    <>
+      <action.icon className="w-4 h-4 shrink-0" />
+      <span className="truncate">{action.label}</span>
+    </>
+  )
+  const className = `quick-action ${action.color} rounded-xl py-3.5 px-4 text-center text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 w-full h-[48px]`
+  
   return (
     <motion.div
       variants={itemVariants}
       whileHover={{ scale: 1.02, y: -1 }}
       whileTap={{ scale: 0.98 }}
     >
-      <Link
-        to={action.to}
-        className={`quick-action ${action.color} rounded-xl py-3.5 px-4 text-center text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 w-full h-[48px]`}
-      >
-        <action.icon className="w-4 h-4 shrink-0" />
-        <span className="truncate">{action.label}</span>
-      </Link>
+      {action.onClick ? (
+        <button onClick={action.onClick} className={className}>
+          {content}
+        </button>
+      ) : (
+        <Link to={action.to} className={className}>
+          {content}
+        </Link>
+      )}
     </motion.div>
   )
 })
 
-const BookingRow = React.memo(function BookingRow({ booking, getStatusConfig }) {
+const BookingRow = React.memo(function BookingRow({ booking, getStatusConfig, onPayNow, payingId }) {
   const statusConf = getStatusConfig(booking.status)
+  const isPaying = payingId === booking.id
   return (
     <motion.div
       variants={itemVariants}
       whileHover={{ x: 4 }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
     >
-      <Link to={`/bookings/${booking.id}`}
-        className="booking-row flex items-center justify-between p-3 rounded-xl group h-[64px]">
-        <div className="flex items-center gap-3 overflow-hidden">
+      <div className="booking-row flex items-center justify-between p-3 rounded-xl group h-auto min-h-[64px]">
+        <Link to={`/bookings/${booking.id}`} className="flex items-center gap-3 overflow-hidden flex-1 min-w-0">
           <div className="w-10 h-10 bg-primary-50 dark:bg-primary-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
             <CalendarIcon className="w-5 h-5 text-primary-600" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-primary-600 transition-colors truncate">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-primary-600 transition-colors truncate">
               {booking.service_title || 'Service'}
             </p>
             <p className="text-xs text-gray-400 truncate">{booking.booking_date || 'N/A'} • {booking.time_slot || ''}</p>
           </div>
-        </div>
-        <div className="flex items-center gap-3 shrink-0 ml-4">
+        </Link>
+        <div className="flex items-center gap-2 shrink-0 ml-3">
           <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-semibold ${statusConf.color}`}>
             <span className={`status-dot ${statusConf.dotColor}`} />
             {statusConf.label}
@@ -132,13 +146,20 @@ const BookingRow = React.memo(function BookingRow({ booking, getStatusConfig }) 
           {booking.payment_status === 'paid' ? (
             <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-semibold">Paid</span>
           ) : booking.status !== 'cancelled' ? (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 font-semibold">Unpaid</span>
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPayNow && onPayNow(booking) }}
+              disabled={isPaying}
+              className="text-xs px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold transition-all flex items-center gap-1.5 shadow-sm active:scale-[0.97] disabled:opacity-50 whitespace-nowrap"
+            >
+              {isPaying ? <Loader2 className="w-3 h-3 animate-spin" /> : <CreditCard className="w-3 h-3" />}
+              {isPaying ? 'Paying…' : 'Pay Now'}
+            </button>
           ) : null}
           <span className="text-sm font-bold text-gray-900 dark:text-white whitespace-nowrap">
             {formatCurrencyINR(booking.amount || booking.price || 0)}
           </span>
         </div>
-      </Link>
+      </div>
     </motion.div>
   )
 })
@@ -149,6 +170,7 @@ const BookingRow = React.memo(function BookingRow({ booking, getStatusConfig }) 
 export default function DashboardPage() {
   const { user, userProfile, isAdmin, isWorker, isEmployer, isCustomer } = useAuth()
   const { services: cachedServices, jobs: cachedJobs, gigs: cachedGigs } = useDataCache()
+  const { settings } = useSettings()
   const [stats, setStats] = useState({
     bookings: 0, services: 0, jobs: 0, gigs: 0,
     revenue: 0, pending: 0, completed: 0, applications: 0,
@@ -156,17 +178,62 @@ export default function DashboardPage() {
     appliedCount: 0, shortlistedCount: 0, rejectedCount: 0,
   })
   const [recentBookings, setRecentBookings] = useState([])
+  const [recentActivity, setRecentActivity] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  
+  // Modals & Flows
+  const [showBookingModal, setShowBookingModal] = useState(false)
+  const [payingId, setPayingId] = useState(null)
+  const navigate = useNavigate()
+
+  const platformName = settings?.platformName || 'WorkSphere'
+
+  const handleBookingCreated = useCallback((newBooking) => {
+    setRecentBookings(prev => [newBooking, ...prev].slice(0, 5))
+    setStats(s => ({
+      ...s,
+      bookings: s.bookings + 1,
+      pending: s.pending + 1,
+      pendingPayments: s.pendingPayments + 1
+    }))
+  }, [])
+
+  const handlePayNow = useCallback((booking) => {
+    // Redirect to the full payment gateway page for a proper checkout experience
+    navigate(`/payments/${booking.id}`)
+  }, [navigate])
+
+  // Set document title for SEO
+  useEffect(() => {
+    document.title = `Dashboard — ${platformName}`
+  }, [platformName])
 
   const loadDashData = useCallback(async () => {
     if (!user) return
     setError(null)
+    
+    // 1. Instant Cache Match
+    const cacheKey = `dash_stats_${user.uid}`
+    const cachedStats = localStorage.getItem(cacheKey)
+    if (cachedStats) {
+      try {
+        const parsed = JSON.parse(cachedStats)
+        setStats(parsed.stats)
+        if (parsed.recentBookings) setRecentBookings(parsed.recentBookings)
+        if (parsed.recentActivity) setRecentActivity(parsed.recentActivity)
+        setLoading(false) // Show UI immediately
+      } catch (e) {}
+    }
+
     try {
       // Fetch bookings (bounded) — no retry / no setTimeout
       const bookings = await getUserBookings(user.uid, 50)
+      const freshRecentBookings = bookings.slice(0, 5)
 
-      setRecentBookings(bookings.slice(0, 5))
+      if (!cachedStats) {
+        setRecentBookings(freshRecentBookings)
+      }
 
       const paid = bookings.filter(b => b.payment_status === 'paid')
       const pending = bookings.filter(b => b.status === 'requested' || b.status === 'accepted')
@@ -183,11 +250,12 @@ export default function DashboardPage() {
       if (isWorker) {
         rolePromises.push(
           getQueryCount('services', 'worker_id', '==', user.uid)
-            .then(count => { serviceCount = count > 0 ? count : 100 })
-            .catch(() => { serviceCount = 100 })
+            .then(count => { serviceCount = count })
+            .catch(() => { serviceCount = 0 })
         )
       }
 
+      let allApps = []
       if (isEmployer) {
         rolePromises.push(
           Promise.all([
@@ -196,20 +264,20 @@ export default function DashboardPage() {
             queryDocumentsLimited('job_applications', 'employerId', '==', user.uid, 100).catch(() => []),
             queryDocumentsLimited('gig_applications', 'employerId', '==', user.uid, 100).catch(() => []),
           ]).then(([jobC, gigC, jobApps, gigApps]) => {
-            jobCount = jobC > 0 ? jobC : 100
-            gigCount = gigC > 0 ? gigC : 100
-            const allApps = [...jobApps, ...gigApps]
+            jobCount = jobC
+            gigCount = gigC
+            allApps = [...jobApps, ...gigApps]
             appCount = allApps.length
             appliedCount = allApps.filter(a => a.status === 'applied').length
             shortlistedCount = allApps.filter(a => a.status === 'shortlisted' || a.status === 'accepted').length
             rejectedCount = allApps.filter(a => a.status === 'rejected').length
-          }).catch(() => { jobCount = 100; gigCount = 100; })
+          }).catch(() => { jobCount = 0; gigCount = 0; })
         )
       }
 
       if (isCustomer) {
         rolePromises.push(
-          getQueryCount('invoices', 'customer_id', '==', user.uid)
+          getQueryCount('invoices', 'user_id', '==', user.uid)
             .then(count => { invoiceCount = count })
             .catch(() => { invoiceCount = 0 })
         )
@@ -217,7 +285,56 @@ export default function DashboardPage() {
 
       await Promise.all(rolePromises)
 
-      setStats({
+      // Synthesize unified "Recent Activity" feed
+      const activities = []
+      bookings.forEach(b => {
+        activities.push({
+          id: `book-${b.id}`,
+          type: 'booking',
+          title: 'Booking Created',
+          desc: `You booked ${b.service_title || 'a service'}`,
+          date: b.createdAt || b.booking_date,
+          icon: CalendarIcon,
+          color: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+        })
+        if (b.payment_status === 'paid') {
+          activities.push({
+            id: `pay-${b.id}`,
+            type: 'payment',
+            title: 'Payment Completed',
+            desc: `Paid ${formatCurrencyINR(b.amount || b.price || 0)} for ${b.service_title}`,
+            date: b.createdAt, // Ideally paidAt, fallback to createdAt
+            icon: CheckCircleIcon,
+            color: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
+          })
+          activities.push({
+            id: `inv-${b.id}`,
+            type: 'invoice',
+            title: 'Invoice Generated',
+            desc: `Invoice ready for ${b.service_title}`,
+            date: b.createdAt,
+            icon: Receipt,
+            color: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400'
+          })
+        }
+      })
+
+      allApps.forEach(a => {
+        activities.push({
+          id: `app-${a.id}`,
+          type: 'application',
+          title: 'New Application',
+          desc: `Application received for your job`,
+          date: a.createdAt,
+          icon: BriefcaseIcon,
+          color: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'
+        })
+      })
+
+      activities.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
+      setRecentActivity(activities.slice(0, 10))
+
+      const freshStats = {
         bookings: bookings.length,
         services: serviceCount,
         jobs: jobCount,
@@ -232,7 +349,18 @@ export default function DashboardPage() {
         appliedCount,
         shortlistedCount,
         rejectedCount,
-      })
+      }
+      
+      setStats(freshStats)
+      setRecentBookings(freshRecentBookings)
+      setRecentActivity(activities.slice(0, 10))
+      
+      // Save to cache
+      localStorage.setItem(`dash_stats_${user.uid}`, JSON.stringify({
+        stats: freshStats,
+        recentBookings: freshRecentBookings,
+        recentActivity: activities.slice(0, 10)
+      }))
     } catch (err) {
       console.error(err)
       // Keep existing zero-state data — no blocking error
@@ -266,7 +394,7 @@ export default function DashboardPage() {
         { label: 'Total Bookings', value: stats.bookings, icon: CalendarIcon, gradient: 'from-blue-500 to-blue-600', to: '/dashboard/bookings' },
         { label: 'Pending', value: stats.pending, icon: ClockIcon, gradient: 'from-amber-500 to-orange-500', to: '/dashboard/bookings', pulse: stats.pending > 0 },
         { label: 'Completed', value: stats.completed, icon: CheckCircleIcon, gradient: 'from-emerald-500 to-green-600', to: '/dashboard/bookings' },
-        { label: 'Payments Due', value: stats.pendingPayments, icon: CreditCard, gradient: 'from-violet-500 to-purple-600', to: '/payments', pulse: stats.pendingPayments > 0 },
+        { label: 'Invoices', value: stats.invoiceCount, icon: Receipt, gradient: 'from-violet-500 to-purple-600', to: '/invoices' },
       )
     }
 
@@ -322,7 +450,7 @@ export default function DashboardPage() {
     const actions = []
     if (isCustomer) {
       actions.push(
-        { label: 'Book Service', icon: ShoppingBag, to: '/services', color: 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-sm hover:shadow-md' },
+        { label: 'Book Now', icon: ShoppingBag, onClick: () => setShowBookingModal(true), color: 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-sm hover:shadow-md' },
         { label: 'Find Workers', icon: UserGroupIcon, to: '/find-workers', color: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30' },
       )
     }
@@ -346,10 +474,76 @@ export default function DashboardPage() {
     return actions
   }, [isCustomer, isWorker, isEmployer])
 
+  // ── Skill-based Recommendation Engine ──
+  const recommendedServices = useMemo(() => {
+    if (!cachedServices.length) return []
+    const userSkills = (userProfile?.skills || []).map(s => s.toLowerCase())
+    const userLocation = (userProfile?.location || '').toLowerCase()
+
+    if (!userSkills.length && !userLocation) {
+      // Fallback: sort by rating desc
+      return [...cachedServices].sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 3)
+    }
+
+    const scored = cachedServices.map(svc => {
+      let score = 0
+      const cat = (svc.category || '').toLowerCase()
+      const title = (svc.title || '').toLowerCase()
+      const loc = (svc.location || '').toLowerCase()
+
+      // Skill match (40% weight)
+      for (const skill of userSkills) {
+        if (cat.includes(skill) || title.includes(skill)) { score += 40; break }
+      }
+      // Location match (30% weight)
+      if (userLocation && loc.includes(userLocation.split(',')[0].trim())) score += 30
+      // Rating boost (30% weight, normalized to 0-30)
+      score += ((svc.rating || 0) / 5) * 30
+
+      return { ...svc, _score: score }
+    })
+
+    return scored.sort((a, b) => b._score - a._score).slice(0, 3)
+  }, [cachedServices, userProfile?.skills, userProfile?.location])
+
+  const recommendedJobs = useMemo(() => {
+    if (!cachedJobs.length) return []
+    const userSkills = (userProfile?.skills || []).map(s => s.toLowerCase())
+    const userLocation = (userProfile?.location || '').toLowerCase()
+
+    if (!userSkills.length && !userLocation) {
+      return cachedJobs.slice(0, 3)
+    }
+
+    const scored = cachedJobs.map(job => {
+      let score = 0
+      const title = (job.title || '').toLowerCase()
+      const cat = (job.category || '').toLowerCase()
+      const loc = (job.location || '').toLowerCase()
+      const reqSkills = (job.skills || []).map(s => s.toLowerCase())
+
+      // Skill match (50% weight)
+      for (const skill of userSkills) {
+        if (title.includes(skill) || cat.includes(skill) || reqSkills.includes(skill)) {
+          score += 50; break
+        }
+      }
+      // Location match (30% weight)
+      if (userLocation && loc.includes(userLocation.split(',')[0].trim())) score += 30
+      // Salary boost (20% weight)
+      score += Math.min((job.salary_min || 0) / 1000000 * 20, 20)
+
+      return { ...job, _score: score }
+    })
+
+    return scored.sort((a, b) => b._score - a._score).slice(0, 3)
+  }, [cachedJobs, userProfile?.skills, userProfile?.location])
+
   const getStatusConfig = useCallback((status) => {
     const configs = {
       completed: { label: 'Completed', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300', dotColor: 'text-green-500' },
       reviewed: { label: 'Reviewed', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300', dotColor: 'text-green-500' },
+      confirmed: { label: 'Confirmed', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300', dotColor: 'text-green-500' },
       requested: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300', dotColor: 'text-yellow-500' },
       accepted: { label: 'Accepted', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300', dotColor: 'text-blue-500' },
       on_the_way: { label: 'On the Way', color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300', dotColor: 'text-indigo-500' },
@@ -412,9 +606,40 @@ export default function DashboardPage() {
           )}
         </div>
         <p className="text-gray-500 dark:text-gray-400 text-sm">
-          Here's your WorkSphere overview for today
+          Here's your {platformName} overview for today
         </p>
       </motion.div>
+
+      {/* Profile Completion */}
+      {(() => {
+        const fields = [
+          !!userProfile?.name, !!userProfile?.email, !!userProfile?.phone,
+          !!userProfile?.location, !!userProfile?.bio, (userProfile?.skills?.length > 0),
+          !!userProfile?.profile_image
+        ]
+        const filled = fields.filter(Boolean).length
+        const pct = Math.round((filled / fields.length) * 100)
+        if (pct >= 100) return null
+        return (
+          <motion.div variants={sectionVariants} className="bg-gradient-to-r from-primary-50 to-violet-50 dark:from-primary-900/10 dark:to-violet-900/10 rounded-2xl border border-primary-200 dark:border-primary-800 p-5 mb-8 flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-primary-800 dark:text-primary-300 text-sm mb-2">Complete Your Profile — {pct}%</p>
+              <div className="h-2 rounded-full bg-primary-100 dark:bg-primary-900/30 overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${pct}%` }}
+                  transition={{ duration: 0.8, delay: 0.3 }}
+                  className="h-full bg-gradient-to-r from-primary-500 to-violet-500 rounded-full"
+                />
+              </div>
+              <p className="text-xs text-primary-600 dark:text-primary-400 mt-1.5">Add your phone, bio, skills & profile photo</p>
+            </div>
+            <Link to="/profile" className="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2 rounded-xl font-semibold text-sm transition-colors shadow-sm whitespace-nowrap">
+              Complete Profile
+            </Link>
+          </motion.div>
+        )
+      })()}
 
       {/* Stats Grid */}
       <motion.div variants={containerVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -491,10 +716,10 @@ export default function DashboardPage() {
           </h2>
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             {performanceStats.map((item, i) => (
-              <div
-                key={i}
-                className="bg-white/10 backdrop-blur-sm rounded-xl p-4 flex flex-col justify-center text-center transition-all duration-200 hover:shadow-md hover:bg-white/15 w-full min-w-0 h-[120px] min-h-[120px]"
-              >
+                <div
+                  key={i}
+                  className="bg-white/10 backdrop-blur-sm rounded-xl p-4 flex flex-col justify-center text-center w-full min-w-0 h-[120px] min-h-[120px]"
+                >
                 <div className="flex items-center justify-center gap-1.5 mb-2">
                   {item.isStar && <Star fill="currentColor" className="w-5 h-5 text-yellow-300" />}
                   <span className="text-3xl font-bold truncate">{item.value !== undefined ? item.value : '--'}</span>
@@ -614,7 +839,7 @@ export default function DashboardPage() {
           </Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {(isCustomer || (!isWorker && !isEmployer)) && cachedServices.slice(0, 3).map((svc) => (
+          {(isCustomer || (!isWorker && !isEmployer)) && recommendedServices.map((svc) => (
             <motion.div key={svc.id} variants={itemVariants} whileHover={{ y: -2 }}>
               <Link to={`/services/${svc.id}`} className="block bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-all group border border-transparent hover:border-primary-200 dark:hover:border-primary-800">
                 <div className="flex items-center gap-3 mb-2">
@@ -636,7 +861,7 @@ export default function DashboardPage() {
               </Link>
             </motion.div>
           ))}
-          {(isWorker || isEmployer) && cachedJobs.slice(0, 3).map((job) => (
+          {(isWorker || isEmployer) && recommendedJobs.map((job) => (
             <motion.div key={job.id} variants={itemVariants} whileHover={{ y: -2 }}>
               <Link to={`/jobs/${job.id}`} className="block bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-all group border border-transparent hover:border-purple-200 dark:hover:border-purple-800">
                 <div className="flex items-center gap-3 mb-2">
@@ -661,6 +886,35 @@ export default function DashboardPage() {
         </div>
       </motion.div>
 
+      {/* My Bookings (with Pay Now actions) */}
+      {recentBookings.length > 0 && (
+        <motion.div
+          variants={sectionVariants}
+          className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 mb-8"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <CalendarIcon className="w-5 h-5 text-primary-500" />
+              My Bookings
+            </h2>
+            <Link to="/dashboard/bookings" className="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center gap-1 group">
+              View all <ArrowRightIcon className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+          </div>
+          <motion.div variants={containerVariants} className="space-y-2">
+            {recentBookings.map(b => (
+              <BookingRow
+                key={b.id}
+                booking={b}
+                getStatusConfig={getStatusConfig}
+                onPayNow={handlePayNow}
+                payingId={payingId}
+              />
+            ))}
+          </motion.div>
+        </motion.div>
+      )}
+
       {/* Recent Bookings */}
       <motion.div
         variants={sectionVariants}
@@ -675,29 +929,47 @@ export default function DashboardPage() {
             View all <ArrowRightIcon className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </div>
-        {recentBookings.length === 0 ? (
+        {recentActivity.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="text-center py-10"
           >
             <div className="w-14 h-14 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-3">
-              <CalendarIcon className="w-7 h-7 text-gray-400" />
+              <History className="w-7 h-7 text-gray-400" />
             </div>
-            <p className="text-gray-400 dark:text-gray-500 text-sm font-medium">No bookings yet</p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm font-medium">No activity yet</p>
             <Link to="/services" className="text-primary-600 text-sm font-medium mt-2 inline-flex items-center gap-1 hover:text-primary-700">
               Browse services <ArrowRightIcon className="w-3 h-3" />
             </Link>
           </motion.div>
         ) : (
-          <motion.div variants={containerVariants} className="space-y-1">
-            {recentBookings.map(b => (
-              <BookingRow key={b.id} booking={b} getStatusConfig={getStatusConfig} />
+          <motion.div variants={containerVariants} className="space-y-3 mt-4">
+            {recentActivity.map((act) => (
+              <motion.div key={act.id} variants={itemVariants} className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border border-transparent hover:border-gray-100 dark:hover:border-gray-800">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${act.color}`}>
+                  <act.icon className="w-5 h-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{act.title}</p>
+                  <p className="text-xs text-gray-500 truncate">{act.desc}</p>
+                </div>
+                <div className="text-xs text-gray-400 whitespace-nowrap">
+                  {act.date ? new Date(act.date).toLocaleDateString() : 'Just now'}
+                </div>
+              </motion.div>
             ))}
           </motion.div>
         )}
       </motion.div>
 
+      {/* Booking Form Modal */}
+      {showBookingModal && (
+        <BookingFormModal
+          onClose={() => setShowBookingModal(false)}
+          onBookingCreated={handleBookingCreated}
+        />
+      )}
     </motion.div>
   )
 }

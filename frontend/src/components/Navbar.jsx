@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
+import { useSettings } from '../context/SettingsContext'
 import { Menu, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
 import NotificationBell from './NotificationBell'
@@ -20,6 +21,7 @@ const publicLinks = [
 export default function Navbar() {
   const { user, userProfile, loading, logout } = useAuth()
   const { darkMode, toggleTheme } = useTheme()
+  const { settings } = useSettings()
   const navigate = useNavigate()
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -36,6 +38,8 @@ export default function Navbar() {
   }, [])
 
   const isActive = (to) => location.pathname === to
+  const platformName = settings?.platformName || 'WorkSphere'
+  const brandInitials = platformName.substring(0, 2).toUpperCase()
 
   return (
     <nav className={`sticky top-0 z-50 transition-all duration-300 ${
@@ -48,9 +52,9 @@ export default function Navbar() {
           {/* Brand */}
           <Link to="/" className="flex items-center gap-2.5 group">
             <div className="w-9 h-9 bg-primary-600 rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
-              <span className="text-white font-bold text-sm">WS</span>
+              <span className="text-white font-bold text-sm">{brandInitials}</span>
             </div>
-            <span className="font-bold text-xl transition-colors text-gray-900 dark:text-white">WorkSphere</span>
+            <span className="font-bold text-xl transition-colors text-gray-900 dark:text-white">{platformName}</span>
           </Link>
 
           {/* Desktop nav */}
@@ -168,7 +172,7 @@ export default function Navbar() {
         enter="transition ease-out duration-200" enterFrom="opacity-0 -translate-y-2"
         enterTo="opacity-100 translate-y-0" leave="transition ease-in duration-150"
         leaveFrom="opacity-100 translate-y-0" leaveTo="opacity-0 -translate-y-2">
-        <div className="md:hidden bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 shadow-lg">
+        <div className="absolute top-full left-0 right-0 md:hidden bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 shadow-xl max-h-[calc(100vh-64px)] overflow-y-auto">
           <div className="px-4 py-4 space-y-1">
             {publicLinks.map(({ label, to }) => (
               <Link key={to} to={to}

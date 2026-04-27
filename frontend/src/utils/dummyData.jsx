@@ -387,6 +387,7 @@ export const BOOKING_STATUSES = [
   { key: 'accepted', label: 'Accepted', color: 'bg-blue-100 text-blue-800' },
   { key: 'on_the_way', label: 'On the Way', color: 'bg-indigo-100 text-indigo-800' },
   { key: 'completed', label: 'Completed', color: 'bg-green-100 text-green-800' },
+  { key: 'confirmed', label: 'Confirmed', color: 'bg-green-100 text-green-800' },
   { key: 'reviewed', label: 'Reviewed', color: 'bg-emerald-100 text-emerald-800' },
   { key: 'cancelled', label: 'Cancelled', color: 'bg-red-100 text-red-800' },
 ]

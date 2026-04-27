@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
+import useSEO from '../../hooks/useSEO'
 import { Link } from 'react-router-dom'
 import { useDataCache } from '../../context/DataCacheContext'
 import { SERVICE_CATEGORIES, dummyWorkers, formatCurrencyINR } from '../../utils/dummyData'
@@ -51,6 +52,13 @@ export default function ServicesPage() {
   const [showWorkers, setShowWorkers] = useState(false)
   const [visibleCount, setVisibleCount] = useState(12)
   const [showAllCategories, setShowAllCategories] = useState(false)
+
+  useSEO({
+    title: category ? `${category} Services | WorkSphere` : 'Services — Book Trusted Professionals | WorkSphere',
+    description: `Book trusted ${category || 'home'} professionals for your needs. Verified experts, instant booking, and secure payments on WorkSphere.`,
+    keywords: `${category || 'services'}, worksphere services, hire professionals, local services`,
+    url: 'https://worksphere.com/services'
+  })
 
   const filteredServices = useMemo(() => {
     let result = services.filter(s => {

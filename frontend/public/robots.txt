@@ -1,24 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://wsphere.me/sitemap.xml
-
-# Disallow private/authenticated paths from crawling
-Disallow: /admin
-Disallow: /dashboard
-Disallow: /profile
-Disallow: /bookings
-Disallow: /payments
-Disallow: /invoices
-
-# Allow important public pages
-Allow: /services
-Allow: /jobs
-Allow: /gigs
-Allow: /find-workers
-Allow: /about
-Allow: /contact
-Allow: /faq
-Allow: /help
-Allow: /login
-Allow: /signup
+Sitemap: https://worksphere.me/sitemap.xml

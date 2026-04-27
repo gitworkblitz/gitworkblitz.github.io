@@ -382,9 +382,12 @@ export default function GigDetailsPage() {
             {applied && (
               <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-6 flex items-center gap-4 animate-slide-up">
                 <CheckCircleIcon className="w-10 h-10 text-green-600 dark:text-green-400 flex-shrink-0" />
-                <div>
+                <div className="flex-1">
                   <h3 className="font-bold text-green-800 dark:text-green-300 text-lg">Proposal Submitted!</h3>
-                  <p className="text-green-700 dark:text-green-400 text-sm mt-0.5">Your proposal has been sent to the client. They will review it and get back to you soon.</p>
+                  <p className="text-green-700 dark:text-green-400 text-sm mt-0.5 mb-3">Your proposal has been sent to the client. They will review it and get back to you soon.</p>
+                  <Link to="/dashboard/applications" className="inline-flex items-center gap-1.5 text-sm font-semibold text-green-700 dark:text-green-400 bg-white dark:bg-green-900/40 px-4 py-2 rounded-lg border border-green-200 dark:border-green-800 hover:bg-green-50 transition-colors">
+                    Track Application
+                  </Link>
                 </div>
               </div>
             )}

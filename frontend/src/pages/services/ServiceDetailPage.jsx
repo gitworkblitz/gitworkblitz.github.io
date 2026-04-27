@@ -90,12 +90,16 @@ export default function ServiceDetailPage() {
       toast.error('Please select date and time slot')
       return
     }
+    if (!address && !userProfile?.location) {
+      toast.error('Please enter your service address')
+      return
+    }
     setBookingLoading(true)
     try {
       const workerId = matchedWorker?.id || service.worker_id || ''
       const workerName = matchedWorker?.name || service.worker_name || ''
 
-      const bookingId = await createBooking({
+      const bookingPayload = {
         service_id: id,
         service_title: service.title,
         category: service.category,
@@ -107,10 +111,21 @@ export default function ServiceDetailPage() {
         time_slot: selectedSlot,
         address: address || userProfile?.location || '',
         amount: service.price || 0,
-      })
-      toast.success('Booking placed! Proceed to payment 💳')
-      navigate(`/bookings/${bookingId}?pay=1`)
+      }
+
+      console.log('[Booking] Creating booking with payload:', bookingPayload)
+      const bookingId = await createBooking(bookingPayload)
+      console.log('[Booking] Booking created successfully, ID:', bookingId)
+
+      if (!bookingId) {
+        throw new Error('Booking creation returned empty ID')
+      }
+
+      toast.success('Booking created! Redirecting to payment…')
+      // Navigate directly to the payment gateway page
+      navigate(`/payments/${bookingId}`)
     } catch (err) {
+      console.error('[Booking] Failed:', err)
       toast.error(err.message || 'Failed to create booking')
     } finally {
       setBookingLoading(false)

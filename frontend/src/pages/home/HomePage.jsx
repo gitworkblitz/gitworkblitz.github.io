@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react'
+import useSEO from '../../hooks/useSEO'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
@@ -9,6 +10,7 @@ import {
 import { StarIcon as StarSolid, CheckBadgeIcon } from '@heroicons/react/24/solid'
 import { getPublicTestimonials } from '../../services/firestoreService'
 import { useDataCache } from '../../context/DataCacheContext'
+import { useSettings } from '../../context/SettingsContext'
 import {
   dummyReviews, dummyJobs, dummyGigs,
   SERVICE_CATEGORIES, calculateWorkerScore, formatCurrencyINR, formatSalaryRange
@@ -39,6 +41,7 @@ const stagger = { show: { transition: { staggerChildren: 0.08 } } }
 
 export default function HomePage() {
   const { services: cachedServices, jobs: cachedJobs, gigs: cachedGigs, workers: cachedWorkers } = useDataCache()
+  const { settings } = useSettings()
   const [testimonials, setTestimonials] = useState([])
 
   const featuredServices = useMemo(() => cachedServices.slice(0, 6), [cachedServices])
@@ -56,11 +59,19 @@ export default function HomePage() {
   const latestJobs = useMemo(() => (cachedJobs.length > 0 ? cachedJobs : dummyJobs).slice(0, 4), [cachedJobs])
   const activeGigs = useMemo(() => (cachedGigs.length > 0 ? cachedGigs : dummyGigs).filter(g => g.status === 'open').slice(0, 4), [cachedGigs])
 
+  const platformName = settings?.platformName || 'WorkSphere'
+
   useEffect(() => {
     getPublicTestimonials()
       .then(reviews => setTestimonials(reviews.length >= 3 ? reviews.slice(0, 6) : dummyReviews.filter(r => r.rating >= 4)))
       .catch(() => setTestimonials(dummyReviews.filter(r => r.rating >= 4)))
   }, [])
+
+  useSEO({
+    title: `${platformName} — Smart Workforce Platform for Urban India`,
+    description: `${platformName} is the smartest way to find local services, hire professionals, and discover freelance jobs across India.`,
+    keywords: `services, jobs, gigs, freelance, hiring, electricians, plumbers, developers, ${platformName.toLowerCase()}`
+  })
 
   return (
     <div className="min-h-screen">
@@ -351,7 +362,7 @@ export default function HomePage() {
           <div className="text-center mb-14">
             <span className="inline-block bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 text-xs font-semibold px-3 py-1 rounded-full mb-4">PLATFORM FEATURES</span>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Everything You Need, in One Place</h2>
-            <p className="text-gray-500 dark:text-gray-400 text-lg max-w-2xl mx-auto">From hiring professionals to landing your next opportunity — WorkSphere has you covered.</p>
+            <p className="text-gray-500 dark:text-gray-400 text-lg max-w-2xl mx-auto">From hiring professionals to landing your next opportunity — {platformName} has you covered.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {features.map(({ icon: Icon, title, desc, color }, i) => (
@@ -373,7 +384,7 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
             <span className="inline-block bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-xs font-semibold px-3 py-1 rounded-full mb-4">SIMPLE PROCESS</span>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3">How WorkSphere Works</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3">How {platformName} Works</h2>
             <p className="text-gray-500 dark:text-gray-400 text-lg">Get started in 3 simple steps</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">

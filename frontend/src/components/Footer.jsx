@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { EnvelopeIcon, PhoneIcon, MapPinIcon } from '@heroicons/react/24/outline'
+import { useSettings } from '../context/SettingsContext'
 
 const platformLinks = [
   ['Services', '/services'],
@@ -20,11 +21,16 @@ const companyLinks = [
 const supportLinks = [
   ['Help Center', '/help'],
   ['FAQ', '/faq'],
+  ['Blog & Articles', '/blog'],
   ['Report Issue', '/report-issue'],
   ['Feedback', '/feedback'],
 ]
 
 export default function Footer() {
+  const { settings } = useSettings()
+  const platformName = settings?.platformName || 'WorkSphere'
+  const brandInitials = platformName.substring(0, 2).toUpperCase()
+
   return (
     <footer className="bg-gray-900 dark:bg-gray-950 text-gray-300">
       {/* Top accent line */}
@@ -36,9 +42,9 @@ export default function Footer() {
           <div className="lg:col-span-2">
             <div className="flex items-center gap-2.5 mb-4">
               <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold">WS</span>
+                <span className="text-white font-bold">{brandInitials}</span>
               </div>
-              <span className="text-white font-bold text-2xl">WorkSphere</span>
+              <span className="text-white font-bold text-2xl">{platformName}</span>
             </div>
             <p className="text-sm text-gray-400 leading-relaxed mb-5 max-w-sm">
               Your all-in-one platform for services, jobs, and gigs. Connecting professionals with opportunities across Delhi NCR.
@@ -105,7 +111,7 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-gray-500">© {new Date().getFullYear()} WorkSphere. All rights reserved.</p>
+          <p className="text-sm text-gray-500">© {new Date().getFullYear()} {platformName}. All rights reserved.</p>
           <div className="flex items-center gap-6 text-sm text-gray-500">
             <Link to="/privacy" className="hover:text-gray-300 transition-colors">Privacy</Link>
             <Link to="/terms" className="hover:text-gray-300 transition-colors">Terms</Link>

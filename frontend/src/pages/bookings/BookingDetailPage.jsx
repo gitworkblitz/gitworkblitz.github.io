@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { useParams, Link, useSearchParams } from 'react-router-dom'
+import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getDocument, updateBookingStatus, simulatePayment, generateInvoice, getBookingInvoice, createReview, queryDocuments } from '../../services/firestoreService'
 import { BOOKING_STATUSES, formatCurrencyINR } from '../../utils/dummyData'
@@ -18,6 +18,7 @@ const STATUS_FLOW = ['requested', 'accepted', 'on_the_way', 'completed']
 export default function BookingDetailPage() {
   const { id } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
   const { user, userProfile } = useAuth()
   const [booking, setBooking] = useState(null)
   const [invoice, setInvoice] = useState(null)
@@ -27,15 +28,14 @@ export default function BookingDetailPage() {
   const [existingReview, setExistingReview] = useState(null)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
 
-  // Auto-open payment modal when redirected from booking (?pay=1)
+  // Auto-redirect to payment gateway when arriving with ?pay=1
   useEffect(() => {
     if (searchParams.get('pay') === '1' && booking && booking.payment_status !== 'paid') {
-      setShowPaymentModal(true)
-      // Clean up URL
       searchParams.delete('pay')
       setSearchParams(searchParams, { replace: true })
+      navigate(`/payments/${id}`, { replace: true })
     }
-  }, [booking, searchParams])
+  }, [booking, searchParams, id, navigate])
 
   const loadBooking = useCallback(async () => {
     setLoading(true)
@@ -74,21 +74,48 @@ export default function BookingDetailPage() {
     }
   }, [id])
 
-  const handlePayment = useCallback(async () => {
+  const handlePayment = useCallback(async (paymentMethod = 'card') => {
     setActionLoading(true)
     try {
-      await simulatePayment(id, booking.amount || booking.price || 0, user.uid)
-      const inv = await generateInvoice(id, booking)
+      const bookingMeta = {
+        service_title: booking.service_title || '',
+        worker_name: booking.worker_name || '',
+        customer_name: booking.customer_name || '',
+        booking_date: booking.booking_date || '',
+        time_slot: booking.time_slot || '',
+      }
+      
+      const paymentResult = await simulatePayment(
+        id,
+        booking.amount || booking.price || 0,
+        user.uid,
+        paymentMethod,
+        bookingMeta
+      )
+
+      // CRITICAL: Merge payment result into booking data so invoice gets correct txnId + method
+      const invoiceBookingData = {
+        ...booking,
+        transaction_id: paymentResult.txnId,
+        payment_method: paymentMethod,
+        paid_at: paymentResult.paidAt,
+      }
+
+      const inv = await generateInvoice(id, invoiceBookingData)
       setBooking(prev => ({ ...prev, payment_status: 'paid' }))
       setInvoice(inv)
+      setActionLoading(false)
       setShowPaymentModal(false)
+      
       toast.success('Payment successful! Invoice generated. 🎉')
+      
+      // Auto-redirect to invoice page after short delay
+      navigate(`/invoices/${inv.id}`)
     } catch (err) {
       toast.error('Payment failed. Please try again.')
-    } finally {
       setActionLoading(false)
     }
-  }, [id, booking, user])
+  }, [id, booking, user, navigate])
 
   const handleReviewSubmit = useCallback(async (reviewData) => {
     try {
@@ -254,7 +281,7 @@ export default function BookingDetailPage() {
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Amount due:</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{formatCurrencyINR(booking.amount || booking.price || 0)}</p>
               <button
-                onClick={() => setShowPaymentModal(true)}
+                onClick={() => navigate(`/payments/${id}`)}
                 className="w-full bg-green-600 text-white px-4 py-3 rounded-xl hover:bg-green-700 transition-all font-bold flex items-center justify-center gap-2 shadow-sm active:scale-[0.98]"
               >
                 <CreditCard className="w-5 h-5" />
@@ -308,6 +335,7 @@ export default function BookingDetailPage() {
           service={booking.service_title}
           worker={booking.worker_name}
           date={booking.booking_date}
+          timeSlot={booking.time_slot}
           loading={actionLoading}
           onConfirm={handlePayment}
           onClose={() => setShowPaymentModal(false)}

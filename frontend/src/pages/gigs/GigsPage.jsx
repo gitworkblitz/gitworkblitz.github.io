@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react'
+import useSEO from '../../hooks/useSEO'
 import { Link } from 'react-router-dom'
 import { MagnifyingGlassIcon, PlusIcon, StarIcon as StarSolid, BriefcaseIcon } from '@heroicons/react/24/solid'
 import { ArrowsUpDownIcon, XMarkIcon } from '@heroicons/react/24/outline'
@@ -58,6 +59,13 @@ export default function GigsPage() {
   const [durationFilter, setDurationFilter] = useState('all')
   const [sortBy, setSortBy] = useState('newest')
   const [visibleCount, setVisibleCount] = useState(12)
+
+  useSEO({
+    title: 'Freelance Gigs | WorkSphere',
+    description: 'Find freelance gigs and short-term projects across India. Work remotely and build your career on WorkSphere.',
+    keywords: 'freelance, gigs, remote work, freelance jobs india, worksphere gigs',
+    url: 'https://worksphere.com/gigs'
+  })
 
   const getDurationDays = (duration) => {
     if (!duration) return 0

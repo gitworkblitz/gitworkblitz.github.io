@@ -4,20 +4,27 @@ import {
 } from 'firebase/firestore'
 import { db } from './firebase'
 import { createNotification } from './notificationService'
+import api from './api'
 
 // ===================== Generic CRUD =====================
 
-// Write timeout — can be a bit longer since writes queue offline
+// Write timeout — generous enough for Firestore to complete write
+// Important: Firestore SDK queues writes offline, so setDoc resolves when
+// the write hits the local cache even if the server hasn't confirmed yet.
+const WRITE_TIMEOUT_MS = 8000
 const executeWithTimeout = (promise, fallbackResult) => {
   return Promise.race([
     promise,
-    new Promise(resolve => setTimeout(() => resolve(fallbackResult), 1200))
+    new Promise((resolve, reject) => setTimeout(() => {
+      console.warn('[Firestore] Write timeout reached — data may be queued offline')
+      resolve(fallbackResult)
+    }, WRITE_TIMEOUT_MS))
   ])
 }
 
 // Read timeout — generous enough for real data to arrive,
 // short enough to not block UI forever if offline
-const READ_TIMEOUT_MS = 3000
+const READ_TIMEOUT_MS = 800
 const readWithTimeout = (promise, fallback) => {
   return Promise.race([
     promise,
@@ -31,13 +38,15 @@ export async function createDocument(collectionName, data, docId = null) {
     const docData = { ...data, createdAt: now, updatedAt: now }
     if (docId) {
       await executeWithTimeout(setDoc(doc(db, collectionName, docId), docData), true)
+      console.log(`[Firestore] Created ${collectionName}/${docId}`)
       return docId
     }
     const newDocRef = doc(collection(db, collectionName))
     await executeWithTimeout(setDoc(newDocRef, docData), true)
+    console.log(`[Firestore] Created ${collectionName}/${newDocRef.id}`)
     return newDocRef.id
   } catch (err) {
-    console.error(`Error creating ${collectionName}:`, err)
+    console.error(`[Firestore] Error creating ${collectionName}:`, err)
     throw err
   }
 }
@@ -606,47 +615,91 @@ export async function getUserBookings(userId, maxPerQuery = 50) {
 
 // ===================== Payments (Simulated) =====================
 
-export async function simulatePayment(bookingId, amount, userId) {
+export async function simulatePayment(bookingId, amount, userId, paymentMethod = 'card', bookingMeta = {}) {
+  const txnId = `TXN${Date.now()}${Math.random().toString(36).substr(2, 6).toUpperCase()}`
+  const paidAt = new Date().toISOString()
+  const tax = Math.round(amount * 0.18)
+  const total = amount + tax
+
   const paymentId = await createDocument('payments', {
     booking_id: bookingId,
     user_id: userId,
     amount,
+    tax,
+    total,
     currency: 'INR',
     status: 'paid',
-    payment_method: 'simulated',
-    paid_at: new Date().toISOString(),
+    payment_method: paymentMethod,
+    transaction_id: txnId,
+    paid_at: paidAt,
+    // Denormalized booking metadata for fast history display
+    service_title: bookingMeta.service_title || '',
+    worker_name: bookingMeta.worker_name || '',
+    customer_name: bookingMeta.customer_name || '',
+    booking_date: bookingMeta.booking_date || '',
+    time_slot: bookingMeta.time_slot || '',
   })
-  await updateDocument('bookings', bookingId, { payment_status: 'paid' })
-  return paymentId
+  await updateDocument('bookings', bookingId, {
+    payment_status: 'paid',
+    paid_at: paidAt,
+    transaction_id: txnId,
+    payment_method: paymentMethod,
+  })
+  return { paymentId, txnId, paidAt, total }
+}
+
+export async function getUserPayments(userId, maxLimit = 50) {
+  return await queryDocumentsLimited('payments', 'user_id', '==', userId, maxLimit, 'paid_at', 'desc')
+}
+
+export async function getPaymentByBookingId(bookingId) {
+  const payments = await queryDocuments('payments', 'booking_id', '==', bookingId, 1)
+  return payments.length > 0 ? payments[0] : null
 }
 
 // ===================== Invoices =====================
 
 export async function generateInvoice(bookingId, bookingData) {
-  const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`
-  const subtotal = bookingData.amount || 0
-  const tax = Math.round(subtotal * 0.18)
-  const total = subtotal + tax
+  try {
+    // Idempotency guard — prevent duplicate invoices for same booking
+    const existing = await getBookingInvoice(bookingId)
+    if (existing) {
+      console.log(`[Invoice] Already exists for booking ${bookingId}: ${existing.id}`)
+      return existing
+    }
 
-  const invoiceData = {
-    invoice_number: invoiceNumber,
-    booking_id: bookingId,
-    customer_id: bookingData.customer_id || '',
-    customer_name: bookingData.customer_name || '',
-    worker_id: bookingData.worker_id || '',
-    worker_name: bookingData.worker_name || '',
-    service_title: bookingData.service_title || '',
-    booking_date: bookingData.booking_date || '',
-    time_slot: bookingData.time_slot || '',
-    address: bookingData.address || '',
-    subtotal,
-    tax,
-    total,
-    status: 'paid',
+    const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`
+    const subtotal = bookingData.amount || bookingData.price || 0
+    const tax = Math.round(subtotal * 0.18)
+    const total = subtotal + tax
+
+    const invoiceData = {
+      invoice_number: invoiceNumber,
+      booking_id: bookingId,
+      user_id: bookingData.customer_id || '', // use user_id to match our queries
+      customer_name: bookingData.customer_name || 'Customer',
+      worker_id: bookingData.worker_id || '',
+      worker_name: bookingData.worker_name || 'Service Professional',
+      service_title: bookingData.service_title || 'Service',
+      booking_date: bookingData.booking_date || new Date().toISOString(),
+      time_slot: bookingData.time_slot || '',
+      address: bookingData.address || '',
+      payment_method: bookingData.payment_method || 'online',
+      transaction_id: bookingData.transaction_id || `TXN${Date.now()}`,
+      subtotal,
+      tax,
+      total,
+      status: 'paid',
+      created_at: new Date().toISOString()
+    }
+
+    const invoiceId = await createDocument('invoices', invoiceData)
+    console.log(`[Invoice] Created ${invoiceId} for booking ${bookingId}`)
+    return { id: invoiceId, ...invoiceData }
+  } catch (err) {
+    console.error('Error generating invoice locally:', err);
+    throw err;
   }
-
-  const invoiceId = await createDocument('invoices', invoiceData)
-  return { id: invoiceId, ...invoiceData }
 }
 
 export async function getBookingInvoice(bookingId) {
@@ -654,8 +707,21 @@ export async function getBookingInvoice(bookingId) {
   return invoices.length > 0 ? invoices[0] : null
 }
 
-export async function getUserInvoices(userId) {
-  return await queryDocuments('invoices', 'customer_id', '==', userId, 50)
+export async function getUserInvoices(userId, maxLimit = 50) {
+  try {
+    const q = query(
+      collection(db, 'invoices'), 
+      where('user_id', '==', userId), 
+      orderBy('created_at', 'desc'), 
+      limit(maxLimit)
+    )
+    const snap = await getDocs(q)
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  } catch (err) {
+    // Fallback if index is missing
+    console.warn("Index missing for invoices user_id + created_at desc, falling back", err)
+    return await queryDocuments('invoices', 'user_id', '==', userId, maxLimit)
+  }
 }
 
 // ===================== Reports =====================
@@ -666,4 +732,40 @@ export async function createReport(reportData) {
 
 export async function getAllReports() {
   return await getRecentDocuments('reports', 100)
+}
+
+// ===================== Platform Settings =====================
+
+export async function getPlatformSettings() {
+  try {
+    const snap = await readWithTimeout(getDoc(doc(db, 'settings', 'platform')), null)
+    if (!snap || !snap.exists()) {
+      // Default settings if not exists
+      return {
+        platformName: 'WorkSphere',
+        adminEmail: 'worksphere.admin@gmail.com',
+        maintenanceMode: false,
+        emailNotifications: true,
+        autoApproveReviews: false,
+        maxBookingsPerDay: 10,
+      }
+    }
+    return snap.data()
+  } catch (err) {
+    console.error('Error getting platform settings:', err)
+    return { platformName: 'WorkSphere' } // fallback
+  }
+}
+
+export async function updatePlatformSettings(data) {
+  try {
+    await executeWithTimeout(setDoc(doc(db, 'settings', 'platform'), {
+      ...data,
+      updatedAt: new Date().toISOString()
+    }), true)
+    return true
+  } catch (err) {
+    console.error('Error updating platform settings:', err)
+    return false
+  }
 }

@@ -20,13 +20,11 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
-      setUser(u)
       if (u) {
         try {
           const snap = await getDoc(doc(db, 'users', u.uid))
           if (snap.exists()) {
-            const profile = { ...snap.data(), uid: u.uid }
-            setUserProfile(profile)
+            setUserProfile({ ...snap.data(), uid: u.uid })
           } else {
             setUserProfile(null)
           }
@@ -34,8 +32,10 @@ export function AuthProvider({ children }) {
           console.error('Error fetching profile:', err)
           setUserProfile(null)
         }
+        setUser(u)
       } else {
         setUserProfile(null)
+        setUser(null)
       }
       setLoading(false)
     })
@@ -113,14 +113,14 @@ export function AuthProvider({ children }) {
     setUserProfile(p => ({ ...p, ...updateData }))
   }, [user])
 
-  const isAdmin = userProfile?.user_type === 'admin'
-  const isWorker = userProfile?.user_type === 'worker'
-  const isEmployer = userProfile?.user_type === 'employer'
-  const isCustomer = userProfile?.user_type === 'customer'
+  const isAdmin = userProfile?.user_type?.toLowerCase() === 'admin'
+  const isWorker = userProfile?.user_type?.toLowerCase() === 'worker'
+  const isEmployer = userProfile?.user_type?.toLowerCase() === 'employer'
+  const isCustomer = userProfile?.user_type?.toLowerCase() === 'customer'
 
   const getRedirectPath = useCallback((profile) => {
     if (!profile) return '/dashboard'
-    switch (profile.user_type) {
+    switch (profile.user_type?.toLowerCase()) {
       case 'admin': return '/admin'
       case 'worker': return '/dashboard'
       case 'employer': return '/dashboard'

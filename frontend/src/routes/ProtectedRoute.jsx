@@ -26,6 +26,7 @@ export default function ProtectedRoute({ children, adminOnly = false, allowedRol
 
   // Check if user is suspended
   if (userProfile?.suspended) {
+    const platformName = window.location.host; // A simple fallback if we don't want to use useSettings here to avoid hook issues.
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="bg-white rounded-2xl shadow-card p-8 max-w-md text-center">
@@ -36,7 +37,7 @@ export default function ProtectedRoute({ children, adminOnly = false, allowedRol
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Account Suspended</h2>
           <p className="text-gray-500 text-sm mb-6">Your account has been temporarily suspended. Please contact support for assistance.</p>
-          <a href="mailto:support@worksphere.com" className="btn-primary inline-block">Contact Support</a>
+          <a href="mailto:support@platform.com" className="btn-primary inline-block">Contact Support</a>
         </div>
       </div>
     )

@@ -37,7 +37,8 @@ class ChatbotService:
                 messages.extend(context["history"][-6:])  # last 3 exchanges
             messages.append({"role": "user", "content": message})
 
-            async with aiohttp.ClientSession() as session:
+            timeout = aiohttp.ClientTimeout(total=6)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.post(
                     OPENROUTER_URL,
                     headers={

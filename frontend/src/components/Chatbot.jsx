@@ -1,24 +1,27 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChatBubbleLeftRightIcon, XMarkIcon, PaperAirplaneIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline'
+import { ChatBubbleLeftRightIcon, XMarkIcon, PaperAirplaneIcon, QuestionMarkCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 import api from '../services/api'
 
-const SUGGESTIONS = ['How to book?', 'Payment methods', 'Cancel booking', 'Find a worker', 'Track my booking']
+const SUGGESTIONS = ['How to book?', 'Payment methods', 'Cancel booking', 'Find a worker', 'Track my booking', 'Jobs & Gigs']
 
 const LOCAL_FAQ = {
-  'how to book': 'Booking is easy! Go to Services -> select a service -> pick a date and time slot -> confirm your booking. Track everything in Dashboard -> My Bookings.',
-  'payment': 'We support secure payments in INR. After payment, GST invoices are auto-generated. View them in Dashboard -> My Invoices.',
-  'cancel': 'You can cancel a booking from My Bookings before the service starts. Refunds are processed within 3-5 business days.',
-  'find worker': 'Visit the "Find Workers" page to browse professionals. Our smart matching ranks workers by rating, experience, and completion rate.',
-  'track': 'Track your booking from Dashboard -> My Bookings. Status updates: Requested -> Confirmed -> In Progress -> Completed.',
-  'review': 'After a booking is completed, you can leave a star rating and review. Your feedback helps others find the best professionals!',
-  'refund': 'Refunds for cancelled bookings are processed within 3-5 business days to your original payment method.',
-  'service': 'We have 20+ service categories - Electrician, Plumber, Carpenter, AC Repair, Salon at Home, Pest Control, and more! Browse them in Services.',
-  'job': 'Check the Jobs section for full-time, part-time, and contract opportunities. Filter by location and skills!',
-  'gig': 'Browse freelance gigs in the Gigs section. Fixed-price projects with clear deliverables. You can also post your own!',
-  'account': 'Manage your profile from Dashboard -> Profile. Update name, phone, location, and skills anytime.',
-  'contact': 'Need help? Email support@worksphere.com or visit the Help Center. You can also report issues from Dashboard.',
-  'match': 'Workers are matched using: 35% Rating + 25% Experience + 20% Distance + 20% Completion Rate. Smart math, not AI!',
+  'how to book': 'Booking is easy! Go to Services → select a service → pick a date and time slot → confirm your booking. Track everything in Dashboard → My Bookings. 📅',
+  'payment': 'We support Card, UPI (GPay/PhonePe/Paytm), and WorkSphere Wallet. After payment, GST invoices are auto-generated. View them in Dashboard → Invoices. 💳',
+  'cancel': 'You can cancel a booking from My Bookings before the service starts. Refunds are processed within 3-5 business days. 🔄',
+  'find worker': 'Visit the "Find Workers" page to browse professionals. Our smart matching ranks workers by rating, experience, and completion rate. 🔍',
+  'track': 'Track your booking from Dashboard → My Bookings. Status updates: Requested → Accepted → On the Way → Completed. 📍',
+  'review': 'After a booking is completed, you can leave a star rating and review. Your feedback helps others find the best professionals! ⭐',
+  'refund': 'Refunds for cancelled bookings are processed within 3-5 business days to your original payment method. 💰',
+  'service': 'We have 20+ service categories — Electrician, Plumber, Carpenter, AC Repair, Salon at Home, Pest Control, and more! Browse them in Services. 🔧',
+  'job': 'Check the Jobs section for full-time, part-time, and contract opportunities. Filter by location and skills! 💼',
+  'gig': 'Browse freelance gigs in the Gigs section. Fixed-price projects with clear deliverables. You can also post your own! 🚀',
+  'account': 'Manage your profile from Dashboard → Profile. Update name, phone, location, and skills anytime. 👤',
+  'contact': 'Need help? Email support@worksphere.com or visit the Help Center. You can also report issues from Dashboard. 📧',
+  'match': 'Workers are matched using: 35% Rating + 25% Experience + 20% Distance + 20% Completion Rate. Smart math for best results! 📊',
+  'invoice': 'Invoices are generated automatically after payment. View, print, or download from Dashboard → My Invoices. All invoices include GST breakdown. 🧾',
+  'recommend': 'We recommend services, jobs, and gigs based on your skills, category preferences, and search history. Check "Recommended For You" on your dashboard! ✨',
+  'pricing': 'Service prices vary by provider and category. You can compare prices while browsing services. GST (18%) is added at checkout. 💲',
 }
 
 function getLocalAnswer(message) {
@@ -27,37 +30,82 @@ function getLocalAnswer(message) {
     if (msg.includes(key)) return answer
   }
   if (/hello|hi|hey|help/.test(msg)) {
-    return "Hello! I am WorkSphere Assistant. I can help with booking services, payments, finding workers, jobs and gigs. What do you need?"
+    return "Hello! I'm WorkSphere Assistant 😊 I can help with booking services, payments, finding workers, jobs and gigs. What do you need?"
   }
   return null
+}
+
+// API call with timeout
+async function fetchBotResponse(message, history) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 8000) // 8s timeout
+  
+  try {
+    const contextHistory = history.slice(-6).map(m => ({
+      role: m.from === 'user' ? 'user' : 'assistant',
+      content: m.text,
+    }))
+    
+    const res = await api.post('/api/chatbot/chat', {
+      message,
+      context: { history: contextHistory }
+    }, { signal: controller.signal })
+    
+    clearTimeout(timeoutId)
+    return res.data.response
+  } catch (err) {
+    clearTimeout(timeoutId)
+    throw err
+  }
 }
 
 export default function Chatbot() {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState([
-    { id: 1, text: "Hi! I am WorkSphere Assistant. Ask me about booking services, payments, jobs, or anything about the platform!", from: 'bot' }
+    { id: 1, text: "Hi! I'm WorkSphere Assistant 😊 Ask me about booking services, payments, jobs, or anything about the platform!", from: 'bot' }
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [retryMsg, setRetryMsg] = useState(null)
   const endRef = useRef(null)
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
-  const send = async (text = input.trim()) => {
-    if (!text) return
+  const send = useCallback(async (text = input.trim()) => {
+    if (!text || loading) return
     const userMsg = { id: Date.now(), text, from: 'user' }
     setMessages(p => [...p, userMsg])
     setInput('')
     setLoading(true)
+    setRetryMsg(null)
+    
+    // Local-first: check FAQ instantly (sub-50ms response)
+    const localAnswer = getLocalAnswer(text)
+    if (localAnswer) {
+      setMessages(p => [...p, { id: Date.now() + 1, text: localAnswer, from: 'bot', isLocal: true }])
+      setLoading(false)
+      return
+    }
+
+    // Only hit API for questions not covered by local FAQ
     try {
-      const res = await api.post('/api/chatbot/chat', { message: text })
-      setMessages(p => [...p, { id: Date.now() + 1, text: res.data.response, from: 'bot' }])
+      const response = await fetchBotResponse(text, [...messages, userMsg])
+      setMessages(p => [...p, { id: Date.now() + 1, text: response, from: 'bot' }])
     } catch {
-      const localAnswer = getLocalAnswer(text)
-      const fallbackText = localAnswer || "I can help with: Booking, Jobs and Gigs, Payments, Account help. Try asking about any of these!"
-      setMessages(p => [...p, { id: Date.now() + 1, text: fallbackText, from: 'bot' }])
+      const fallbackText = "I can help with: 📋 Booking, 💼 Jobs & Gigs, 💳 Payments, 👤 Account, ⭐ Reviews. Try asking about any of these!"
+      setMessages(p => [...p, { id: Date.now() + 1, text: fallbackText, from: 'bot', isLocal: true }])
+      setRetryMsg(text)
     } finally { setLoading(false) }
-  }
+  }, [input, loading, messages])
+
+  const handleRetry = useCallback(() => {
+    if (retryMsg) {
+      // Remove last bot message (the fallback) and retry
+      setMessages(p => p.slice(0, -1))
+      send(retryMsg)
+      setRetryMsg(null)
+    }
+  }, [retryMsg, send])
 
   return (
     <>
@@ -81,7 +129,6 @@ export default function Chatbot() {
         )}
       </AnimatePresence>
 
-
       <AnimatePresence>
         {open && (
           <motion.div
@@ -90,8 +137,9 @@ export default function Chatbot() {
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
             className="fixed bottom-6 right-6 w-[380px] max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-40 flex flex-col overflow-hidden"
-            style={{ maxHeight: '540px' }}>
+            style={{ maxHeight: '560px' }}>
 
+            {/* Header */}
             <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-5 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
@@ -101,7 +149,7 @@ export default function Chatbot() {
                   <p className="text-white font-semibold text-sm">WorkSphere Assistant</p>
                   <p className="text-primary-200 text-xs flex items-center gap-1">
                     <span className="w-1.5 h-1.5 bg-green-400 rounded-full" />
-                    Help and FAQ
+                    Online • Help & FAQ
                   </p>
                 </div>
               </div>
@@ -110,20 +158,26 @@ export default function Chatbot() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50" style={{ minHeight: '280px', maxHeight: '320px' }}>
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-gray-950" style={{ minHeight: '280px', maxHeight: '320px' }}>
               {messages.map(m => (
                 <motion.div key={m.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                   className={`flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                     m.from === 'user'
                       ? 'bg-primary-600 text-white rounded-br-md'
-                      : 'bg-white text-gray-800 shadow-sm border border-gray-100 rounded-bl-md'
-                  }`}>{m.text}</div>
+                      : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-sm border border-gray-100 dark:border-gray-700 rounded-bl-md'
+                  }`}>
+                    {m.text}
+                    {m.isLocal && (
+                      <span className="block text-[10px] mt-1 opacity-60">💡 Quick answer</span>
+                    )}
+                  </div>
                 </motion.div>
               ))}
               {loading && (
                 <div className="flex justify-start">
-                  <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-gray-100">
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 shadow-sm border border-gray-100 dark:border-gray-700">
                     <div className="flex gap-1.5">
                       {[0, 0.15, 0.3].map((d, i) => (
                         <div key={i} className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: `${d}s` }} />
@@ -135,29 +189,42 @@ export default function Chatbot() {
               <div ref={endRef} />
             </div>
 
-            <div className="px-4 py-2.5 bg-white border-t border-gray-100">
+            {/* Retry bar */}
+            {retryMsg && !loading && (
+              <div className="px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border-t border-amber-200 dark:border-amber-800 flex items-center justify-between">
+                <span className="text-xs text-amber-700 dark:text-amber-400">Response from local FAQ</span>
+                <button onClick={handleRetry} className="text-xs text-amber-700 dark:text-amber-400 font-medium flex items-center gap-1 hover:text-amber-800 transition-colors">
+                  <ArrowPathIcon className="w-3 h-3" /> Retry AI
+                </button>
+              </div>
+            )}
+
+            {/* Suggestions */}
+            <div className="px-4 py-2.5 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
               <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
                 {SUGGESTIONS.map(s => (
                   <button key={s} onClick={() => send(s)}
-                    className="flex-shrink-0 text-xs bg-gray-100 hover:bg-primary-50 hover:text-primary-700 text-gray-600 px-3 py-1.5 rounded-full transition-colors whitespace-nowrap font-medium">
+                    className="flex-shrink-0 text-xs bg-gray-100 dark:bg-gray-800 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-700 dark:hover:text-primary-400 text-gray-600 dark:text-gray-400 px-3 py-1.5 rounded-full transition-colors whitespace-nowrap font-medium">
                     {s}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="px-4 py-3 bg-white border-t border-gray-100">
-              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 focus-within:border-primary-400 focus-within:ring-2 focus-within:ring-primary-100 transition-all">
+            {/* Input */}
+            <div className="px-4 py-3 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
+              <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 focus-within:border-primary-400 focus-within:ring-2 focus-within:ring-primary-100 dark:focus-within:ring-primary-900/30 transition-all">
                 <input value={input} onChange={e => setInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
                   placeholder="Ask about bookings, payments..."
-                  className="flex-1 bg-transparent text-sm outline-none text-gray-700 placeholder-gray-400" />
+                  disabled={loading}
+                  className="flex-1 bg-transparent text-sm outline-none text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 disabled:opacity-50" />
                 <button onClick={() => send()} disabled={!input.trim() || loading}
                   className="text-primary-600 hover:text-primary-800 disabled:opacity-30 transition-colors flex-shrink-0 p-1">
                   <PaperAirplaneIcon className="w-5 h-5" />
                 </button>
               </div>
-              <p className="text-[10px] text-gray-400 text-center mt-1.5">Powered by WorkSphere - Help and Support only</p>
+              <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center mt-1.5">Powered by WorkSphere • Help and Support</p>
             </div>
           </motion.div>
         )}

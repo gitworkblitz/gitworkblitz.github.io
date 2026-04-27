@@ -94,7 +94,8 @@ export default function MyServices() {
           {services.map((s, i) => (
             <div
               key={s.id}
-              className="stat-card dash-card-enter bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-5 group"
+              style={{ animationDelay: `${i * 0.05}s` }}
+              className="animate-slide-up bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-5 group hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
             >
               {/* Title + Price */}
               <div className="flex items-start justify-between mb-2">
@@ -134,23 +135,28 @@ export default function MyServices() {
                   <span className="text-sm font-medium text-gray-900 dark:text-white">{s.rating || '0.0'}</span>
                   <span className="text-xs text-gray-400">({s.total_reviews || 0} reviews)</span>
                 </div>
-                <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold ${
-                  s.is_active !== false
-                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                }`}>
-                  {s.is_active !== false ? (
-                    <>
-                      <span className="status-dot bg-green-500" />
-                      Active
-                    </>
-                  ) : (
-                    <>
-                      <XCircleIcon className="w-3 h-3" />
-                      Inactive
-                    </>
-                  )}
-                </span>
+                <div className="flex items-center gap-2">
+                  <Link to={`/services/${s.id}`} className="text-gray-400 hover:text-primary-600 transition-colors p-1">
+                    <EyeIcon className="w-4 h-4" />
+                  </Link>
+                  <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold ${
+                    s.is_active !== false
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                  }`}>
+                    {s.is_active !== false ? (
+                      <>
+                        <span className="status-dot bg-green-500" />
+                        Active
+                      </>
+                    ) : (
+                      <>
+                        <XCircleIcon className="w-3 h-3" />
+                        Inactive
+                      </>
+                    )}
+                  </span>
+                </div>
               </div>
             </div>
           ))}

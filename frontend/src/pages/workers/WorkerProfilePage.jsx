@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import useSEO from '../../hooks/useSEO'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getDocument } from '../../services/firestoreService'
 import { dummyWorkers, formatCurrencyINR } from '../../utils/dummyData'
@@ -39,6 +40,12 @@ export default function WorkerProfilePage() {
   useEffect(() => {
     loadWorker()
   }, [loadWorker])
+
+  useSEO({
+    title: worker ? `${worker.name} - ${worker.category || 'Professional'} | WorkSphere` : 'Worker Profile | WorkSphere',
+    description: worker ? `Hire ${worker.name}, an expert ${worker.category || 'professional'} on WorkSphere.` : 'View professional worker profiles on WorkSphere.',
+    keywords: worker ? `${worker.name}, ${worker.category}, worksphere, hire professional` : 'worksphere worker, hire',
+  })
 
   if (loading) return <PageSkeleton />
 

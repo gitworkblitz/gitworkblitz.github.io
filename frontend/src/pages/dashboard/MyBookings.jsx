@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getUserBookings, updateBookingStatus } from '../../services/firestoreService'
 import { BOOKING_STATUSES, formatCurrencyINR } from '../../utils/dummyData'
@@ -8,7 +8,7 @@ import ErrorState from '../../components/ErrorState'
 import EmptyState from '../../components/EmptyState'
 import {
   CalendarIcon, ClockIcon, CheckCircleIcon, TruckIcon, XCircleIcon,
-  ArrowRightIcon, FunnelIcon
+  ArrowRightIcon, FunnelIcon, CreditCardIcon
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 
@@ -36,6 +36,7 @@ const STATUS_FILTERS = [
 
 export default function MyBookings() {
   const { user, isWorker } = useAuth()
+  const navigate = useNavigate()
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -57,6 +58,10 @@ export default function MyBookings() {
   }, [user])
 
   useEffect(() => { if (user) loadBookings() }, [user, loadBookings])
+
+  useEffect(() => {
+    document.title = 'My Bookings | WorkSphere'
+  }, [])
 
   const handleStatusUpdate = useCallback(async (bookingId, newStatus) => {
     setActionLoading(bookingId + newStatus)
@@ -148,7 +153,7 @@ export default function MyBookings() {
               <div className="flex items-center gap-3 mt-2">
                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusConf.color}`}>
                   <span className={`status-dot ${
-                    b.status === 'completed' || b.status === 'reviewed' ? 'bg-green-500' :
+                    b.status === 'completed' || b.status === 'reviewed' || b.status === 'confirmed' ? 'bg-green-500' :
                     b.status === 'requested' ? 'bg-yellow-500' :
                     b.status === 'cancelled' ? 'bg-red-500' : 'bg-blue-500'
                   }`} />
@@ -176,11 +181,21 @@ export default function MyBookings() {
                 {action.label}
               </button>
             ))}
-            {/* Customer link to detail page */}
+            {/* Customer actions */}
             {!showActions && (
-              <Link to={`/bookings/${b.id}`} className="text-xs text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
-                View <ArrowRightIcon className="w-3 h-3" />
-              </Link>
+              <div className="flex flex-col items-end gap-2">
+                {b.payment_status !== 'paid' && b.status !== 'cancelled' && (
+                  <button
+                    onClick={(e) => { e.preventDefault(); navigate(`/payments/${b.id}`) }}
+                    className="text-xs font-semibold px-3.5 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white transition-all flex items-center gap-1.5 shadow-sm active:scale-[0.97]"
+                  >
+                    <CreditCardIcon className="w-3.5 h-3.5" /> Pay Now
+                  </button>
+                )}
+                <Link to={`/bookings/${b.id}`} className="text-xs text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
+                  View <ArrowRightIcon className="w-3 h-3" />
+                </Link>
+              </div>
             )}
           </div>
         </div>
@@ -261,7 +276,11 @@ export default function MyBookings() {
           <div>
             {isWorker && <h2 className="text-base font-bold text-gray-900 dark:text-white mb-3">My Bookings as Customer</h2>}
             <div className="space-y-3">
-              {filteredCustomerBookings.map(b => renderBookingCard(b, false))}
+              {filteredCustomerBookings.map((b, i) => (
+                <div key={b.id} style={{ animationDelay: `${i * 0.05}s` }} className="animate-slide-up">
+                  {renderBookingCard(b, false)}
+                </div>
+              ))}
             </div>
           </div>
         )

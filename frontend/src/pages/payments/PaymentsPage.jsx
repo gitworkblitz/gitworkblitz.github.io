@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { getUserBookings, simulatePayment, generateInvoice } from '../../services/firestoreService'
+import { useSettings } from '../../context/SettingsContext'
+import { getUserBookings } from '../../services/firestoreService'
 import { formatCurrencyINR } from '../../utils/dummyData'
 import { TableSkeleton } from '../../components/SkeletonLoader'
 import toast from 'react-hot-toast'
@@ -14,14 +15,15 @@ import {
   CreditCard,
   TrendingUp,
 } from 'lucide-react'
-import PaymentModal from '../../components/PaymentModal'
 
 export default function PaymentsPage() {
   const { user } = useAuth()
+  const { settings } = useSettings()
+  const navigate = useNavigate()
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
-  const [payingId, setPayingId] = useState(null)
-  const [payingBooking, setPayingBooking] = useState(null)
+
+  const platformName = settings?.platformName || 'WorkSphere'
 
   const loadBookings = useCallback(async () => {
     if (!user) return
@@ -40,21 +42,9 @@ export default function PaymentsPage() {
     if (user) loadBookings()
   }, [user, loadBookings])
 
-  const handlePayment = useCallback(async (booking) => {
-    setPayingId(booking.id)
-    try {
-      await simulatePayment(booking.id, booking.amount || booking.price || 0, user.uid)
-      await generateInvoice(booking.id, booking)
-      toast.success('Payment successful! Invoice generated 🎉')
-      setPayingBooking(null)
-      // Optimistic update: flip payment_status in local state instantly
-      setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, payment_status: 'paid' } : b))
-    } catch (err) {
-      toast.error('Payment failed. Please try again.')
-    } finally {
-      setPayingId(null)
-    }
-  }, [user])
+  useEffect(() => {
+    document.title = `Payments | ${platformName}`
+  }, [platformName])
 
   const pendingPayment = useMemo(() =>
     bookings.filter(b => b.payment_status !== 'paid' && b.status !== 'cancelled'),
@@ -145,14 +135,9 @@ export default function PaymentsPage() {
                 <div className="flex items-center gap-4">
                   <p className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrencyINR(b.amount || b.price || 0)}</p>
                   <button
-                    onClick={() => setPayingBooking(b)}
-                    disabled={payingId === b.id}
-                    className="bg-green-600 text-white px-5 py-2.5 rounded-xl hover:bg-green-700 transition-all font-semibold text-sm flex items-center gap-2 shadow-sm disabled:opacity-50 active:scale-[0.98]">
-                    {payingId === b.id ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <CreditCard className="w-4 h-4" />
-                    )}
+                    onClick={() => navigate(`/payments/${b.id}`)}
+                    className="bg-green-600 text-white px-5 py-2.5 rounded-xl hover:bg-green-700 transition-all font-semibold text-sm flex items-center gap-2 shadow-sm active:scale-[0.98]">
+                    <CreditCard className="w-4 h-4" />
                     Pay Now
                   </button>
                 </div>
@@ -190,24 +175,15 @@ export default function PaymentsPage() {
                   <Link to={`/bookings/${b.id}`} className="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center gap-1">
                     View <ArrowRightIcon className="w-3 h-3" />
                   </Link>
+                  <Link to="/invoices" className="text-green-600 hover:text-green-700 text-sm font-medium flex items-center gap-1">
+                    Invoice <ArrowRightIcon className="w-3 h-3" />
+                  </Link>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
-
-      {payingBooking && (
-        <PaymentModal
-          amount={payingBooking.amount || payingBooking.price || 0}
-          service={payingBooking.service_title}
-          worker={payingBooking.worker_name}
-          date={payingBooking.booking_date}
-          loading={payingId === payingBooking.id}
-          onConfirm={() => handlePayment(payingBooking)}
-          onClose={() => !payingId && setPayingBooking(null)}
-        />
-      )}
     </div>
   )
 }

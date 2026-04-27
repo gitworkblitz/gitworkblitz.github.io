@@ -1,15 +1,20 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useSettings } from '../../context/SettingsContext'
 import { EnvelopeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 
 export default function LoginPage() {
   const { login, getRedirectPath } = useAuth()
+  const { settings } = useSettings()
   const navigate = useNavigate()
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const platformName = settings?.platformName || 'WorkSphere'
+  const brandInitials = platformName.substring(0, 2).toUpperCase()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -44,9 +49,9 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
-              <span className="text-2xl font-bold">WS</span>
+              <span className="text-2xl font-bold">{brandInitials}</span>
             </div>
-            <span className="text-3xl font-bold">WorkSphere</span>
+            <span className="text-3xl font-bold">{platformName}</span>
           </div>
           <h2 className="text-4xl font-extrabold leading-tight mb-4">
             Welcome back to<br />your workspace
@@ -77,9 +82,9 @@ export default function LoginPage() {
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2 mb-8 justify-center">
             <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg">WS</span>
+              <span className="text-white font-bold text-lg">{brandInitials}</span>
             </div>
-            <span className="font-bold text-gray-900 text-2xl">WorkSphere</span>
+            <span className="font-bold text-gray-900 text-2xl">{platformName}</span>
           </div>
 
           <div className="bg-white rounded-2xl shadow-card p-8">
