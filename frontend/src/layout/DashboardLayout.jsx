@@ -46,14 +46,28 @@ const SidebarContent = React.memo(function SidebarContent({ onClose }) {
     // My Applications — visible to all roles who can apply
     items.push({ label: 'My Applications', to: '/dashboard/applications', icon: Send })
 
+    // Customers → Browse marketplace links
+    if (isCustomer) {
+      items.push(
+        { label: 'Browse Services', to: '/services', icon: Search },
+        { label: 'Browse Jobs', to: '/jobs', icon: Briefcase },
+        { label: 'Browse Gigs', to: '/gigs', icon: Rocket },
+      )
+    }
+
     items.push(
       { label: 'Payments', to: '/payments', icon: CreditCard },
       { label: 'Invoices', to: '/invoices', icon: FileText },
       { label: 'Profile', to: '/profile', icon: User },
     )
 
+    // Admin → Admin Panel link
+    if (isAdmin) {
+      items.push({ label: 'Admin Panel', to: '/admin', icon: ShieldCheck })
+    }
+
     return items
-  }, [isWorker, isEmployer, isAdmin])
+  }, [isWorker, isEmployer, isCustomer, isAdmin])
 
   const handleLogout = useCallback(async () => {
     await logout()
@@ -92,9 +106,13 @@ const SidebarContent = React.memo(function SidebarContent({ onClose }) {
       {/* User section */}
       <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary-400 to-violet-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-md ring-2 ring-white dark:ring-gray-800">
-            {userInitial}
-          </div>
+          {userProfile?.photoURL ? (
+            <img src={userProfile.photoURL} alt={userName} className="w-11 h-11 rounded-full object-cover flex-shrink-0 shadow-md ring-2 ring-white dark:ring-gray-800" />
+          ) : (
+            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary-400 to-violet-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-md ring-2 ring-white dark:ring-gray-800">
+              {userInitial}
+            </div>
+          )}
           <div className="min-w-0">
             <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">{userName}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400 capitalize flex items-center gap-1">

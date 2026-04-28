@@ -1,4 +1,10 @@
 User-agent: *
 Allow: /
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /profile
+Disallow: /payments
+Disallow: /invoices
+Disallow: /bookings
 
 Sitemap: https://worksphere.me/sitemap.xml

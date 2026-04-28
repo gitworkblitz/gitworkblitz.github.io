@@ -5,8 +5,15 @@ import { dummyServices, dummyJobs, dummyGigs, dummyWorkers } from '../utils/dumm
 const DataCacheContext = createContext()
 export const useDataCache = () => useContext(DataCacheContext)
 
-// Cache TTL in ms (5 minutes)
-const CACHE_TTL = 5 * 60 * 1000
+// Cache TTL in ms (8 minutes)
+const CACHE_TTL = 8 * 60 * 1000
+
+// Helper: wrap promise with timeout to prevent hanging on slow networks
+const withTimeout = (promise, ms = 8000) =>
+  Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Fetch timeout')), ms))
+  ])
 
 export function DataCacheProvider({ children }) {
   const [services, setServices] = useState(dummyServices)
@@ -30,10 +37,10 @@ export function DataCacheProvider({ children }) {
 
     try {
       const [svcData, jobData, gigData, workerData] = await Promise.all([
-        getAllServices(100).catch(() => []),
-        getAllJobs(100).catch(() => []),
-        getAllGigs(100).catch(() => []),
-        queryDocumentsLimited('users', 'user_type', '==', 'worker', 50).catch(() => []),
+        withTimeout(getAllServices(100)).catch(() => []),
+        withTimeout(getAllJobs(100)).catch(() => []),
+        withTimeout(getAllGigs(100)).catch(() => []),
+        withTimeout(queryDocumentsLimited('users', 'user_type', '==', 'worker', 50)).catch(() => []),
       ])
 
       if (!mountedRef.current) return

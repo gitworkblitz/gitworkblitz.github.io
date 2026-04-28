@@ -64,10 +64,17 @@ export default function MyBookings() {
   }, [])
 
   const handleStatusUpdate = useCallback(async (bookingId, newStatus) => {
+    // Disable duplicate clicks
+    if (actionLoading) return
     setActionLoading(bookingId + newStatus)
+    
+    // OPTIMISTIC UI UPDATE: Instantly change status in UI
+    const previousBookings = [...bookings]
+    setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: newStatus } : b))
+    
     try {
+      // Background async call
       await updateBookingStatus(bookingId, newStatus)
-      setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: newStatus } : b))
       const messages = {
         accepted: 'Booking accepted! ✅',
         cancelled: 'Booking rejected',
@@ -76,11 +83,13 @@ export default function MyBookings() {
       }
       toast.success(messages[newStatus] || `Status updated to ${newStatus}`)
     } catch (err) {
+      // REVERT on failure
+      setBookings(previousBookings)
       toast.error(err.message || 'Failed to update booking status')
     } finally {
       setActionLoading(null)
     }
-  }, [])
+  }, [actionLoading, bookings])
 
   // Memoized filtered bookings
   const workerBookings = useMemo(() =>

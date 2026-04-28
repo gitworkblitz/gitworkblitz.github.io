@@ -305,7 +305,7 @@ export default function JobsPage() {
             )}
           </>
         ) : (
-          <EmptyState icon={MagnifyingGlassIcon} title="No jobs found" description="Try adjusting your search filters" actionLabel={user ? "Post a Job" : "Sign up to post"} actionTo={user ? "/jobs/create" : "/signup"} />
+          <EmptyState icon={MagnifyingGlassIcon} title="No jobs found" description="Try adjusting your search filters" actionLabel={userProfile?.user_type === 'employer' ? "Post a Job" : undefined} actionTo={userProfile?.user_type === 'employer' ? "/jobs/create" : undefined} />
         )}
       </div>
     </div>

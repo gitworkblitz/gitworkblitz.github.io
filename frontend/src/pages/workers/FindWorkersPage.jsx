@@ -129,9 +129,13 @@ export default function FindWorkersPage() {
               transition={{ delay: i * 0.05 }}
               className="bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100 dark:border-gray-800 p-5 hover:shadow-card-hover transition-all duration-300 hover:-translate-y-1">
               <div className="flex items-start gap-4 mb-4">
-                <div className={`w-14 h-14 rounded-full ${w.avatar_color || 'bg-primary-500'} flex items-center justify-center text-white font-bold text-lg shadow-sm`}>
-                  {(w.name || 'W')[0]}
-                </div>
+                {w.photoURL ? (
+                  <img src={w.photoURL} alt={w.name} loading="lazy" className="w-14 h-14 rounded-full object-cover shadow-sm flex-shrink-0" />
+                ) : (
+                  <div className={`w-14 h-14 rounded-full ${w.avatar_color || 'bg-primary-500'} flex items-center justify-center text-white font-bold text-lg shadow-sm`}>
+                    {(w.name || 'W')[0]}
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <h3 className="font-semibold text-gray-900 dark:text-white truncate">{w.name}</h3>

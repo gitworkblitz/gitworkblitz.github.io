@@ -1,6 +1,11 @@
 import { useEffect } from 'react'
 
-export default function useSEO({ title, description, keywords, ogImage, url, type = 'website' }) {
+/**
+ * useSEO - Production-grade SEO hook for WorkSphere
+ * Supports: title, meta tags, Open Graph, Twitter Cards, canonical URL,
+ *           and rich JSON-LD schema for website, article, service, and job types.
+ */
+export default function useSEO({ title, description, keywords, ogImage, url, type = 'website', schemaData }) {
   useEffect(() => {
     // 1. Update Title
     const finalTitle = title ? `${title} | WorkSphere` : 'WorkSphere - Hire Experts & Find Jobs'
@@ -48,7 +53,7 @@ export default function useSEO({ title, description, keywords, ogImage, url, typ
     }
     canonical.setAttribute('href', url || window.location.href)
 
-    // 7. Schema Markup (JSON-LD)
+    // 7. Schema Markup (JSON-LD) — supports custom schema or auto-generates
     let schemaScript = document.getElementById('seo-schema')
     if (!schemaScript) {
       schemaScript = document.createElement('script')
@@ -57,21 +62,54 @@ export default function useSEO({ title, description, keywords, ogImage, url, typ
       document.head.appendChild(schemaScript)
     }
     
-    const schemaData = type === 'article' ? {
-      "@context": "https://schema.org",
-      "@type": "Article",
-      "headline": finalTitle,
-      "description": description,
-      "image": ogImage || "https://worksphere.me/og-image.jpg",
-      "author": { "@type": "Organization", "name": "WorkSphere" },
-      "publisher": { "@type": "Organization", "name": "WorkSphere", "logo": { "@type": "ImageObject", "url": "https://worksphere.me/logo.png" } }
-    } : {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "WorkSphere",
-      "url": "https://worksphere.me/"
+    let schema
+    if (schemaData) {
+      // Use provided custom schema (e.g., Service, JobPosting)
+      schema = schemaData
+    } else if (type === 'article') {
+      schema = {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": finalTitle,
+        "description": description,
+        "image": ogImage || "https://worksphere.me/og-image.jpg",
+        "author": { "@type": "Organization", "name": "WorkSphere" },
+        "publisher": { "@type": "Organization", "name": "WorkSphere", "logo": { "@type": "ImageObject", "url": "https://worksphere.me/logo.png" } }
+      }
+    } else if (type === 'service') {
+      schema = {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": title,
+        "description": description,
+        "provider": { "@type": "Organization", "name": "WorkSphere", "url": "https://worksphere.me" },
+        "areaServed": { "@type": "Country", "name": "India" },
+        "url": url || window.location.href,
+      }
+    } else if (type === 'jobPosting') {
+      schema = {
+        "@context": "https://schema.org",
+        "@type": "JobPosting",
+        "title": title,
+        "description": description,
+        "hiringOrganization": { "@type": "Organization", "name": "WorkSphere", "sameAs": "https://worksphere.me" },
+        "jobLocation": { "@type": "Place", "address": { "@type": "PostalAddress", "addressCountry": "IN" } },
+        "url": url || window.location.href,
+      }
+    } else {
+      schema = {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "WorkSphere",
+        "url": "https://worksphere.me/",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://worksphere.me/services?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
     }
-    schemaScript.textContent = JSON.stringify(schemaData)
+    schemaScript.textContent = JSON.stringify(schema)
 
-  }, [title, description, keywords, ogImage, url, type])
+  }, [title, description, keywords, ogImage, url, type, schemaData])
 }

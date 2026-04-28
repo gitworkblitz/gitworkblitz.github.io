@@ -242,8 +242,8 @@ export default function GigsPage() {
             icon={MagnifyingGlassIcon} 
             title="No gigs found" 
             description="Try adjusting your search or category filters"
-            actionLabel="Post a Gig" 
-            actionTo="/gigs/create" 
+            actionLabel={userProfile?.user_type === 'employer' ? "Post a Gig" : undefined}
+            actionTo={userProfile?.user_type === 'employer' ? "/gigs/create" : undefined}
           />
         )}
       </div>

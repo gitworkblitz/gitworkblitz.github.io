@@ -22,6 +22,14 @@ const LOCAL_FAQ = {
   'invoice': 'Invoices are generated automatically after payment. View, print, or download from Dashboard → My Invoices. All invoices include GST breakdown. 🧾',
   'recommend': 'We recommend services, jobs, and gigs based on your skills, category preferences, and search history. Check "Recommended For You" on your dashboard! ✨',
   'pricing': 'Service prices vary by provider and category. You can compare prices while browsing services. GST (18%) is added at checkout. 💲',
+  'safe': 'All workers on WorkSphere are verified. We use ID verification, background checks, and skill assessments to ensure your safety. 🛡️',
+  'available': 'Services are available 7 days a week. Most workers accept bookings from 8 AM to 9 PM. You can check each worker\'s availability before booking. 🕐',
+  'register': 'Sign up with your email, choose your role (Customer, Worker, or Employer), and complete your profile. It takes less than 2 minutes! 🎉',
+  'verify': 'Worker profiles show verified badges, ratings, completion rates, and years of experience. Look for workers with 4.5+ ratings for best service. ✅',
+  'portfolio': 'Workers can showcase their work in their profile. Check their past projects, reviews, and specializations before booking. 📂',
+  'discount': 'Check the Offers section for active coupons and discounts. We regularly run promotions for new users and festival seasons! 🎁',
+  'support': 'Our support team is available Mon-Sat, 9 AM - 6 PM IST. Use the Help Center, chatbot, or email us at support@worksphere.com. 🤝',
+  'rating': 'Workers are rated on a 5-star scale. Ratings are based on quality, punctuality, professionalism, and value for money. ⭐',
 }
 
 function getLocalAnswer(message) {

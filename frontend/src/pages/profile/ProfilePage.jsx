@@ -1,14 +1,17 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useSettings } from '../../context/SettingsContext'
 import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { getUserBookings, getUserInvoices } from '../../services/firestoreService'
 import { formatCurrencyINR } from '../../utils/dummyData'
+import { storage } from '../../services/firebase'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import {
   UserIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, StarIcon,
   PencilIcon, CheckIcon, XMarkIcon, BriefcaseIcon, ClockIcon,
-  CalendarDaysIcon, ChartBarIcon, DocumentTextIcon, ArrowRightIcon
+  CalendarDaysIcon, ChartBarIcon, DocumentTextIcon, ArrowRightIcon,
+  CurrencyRupeeIcon, CameraIcon
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { ProfileSkeleton } from '../../components/SkeletonLoader'
@@ -26,6 +29,8 @@ export default function ProfilePage() {
   const [skillInput, setSkillInput] = useState('')
   const [bookingStats, setBookingStats] = useState({ total: 0, completed: 0, active: 0 })
   const [recentInvoices, setRecentInvoices] = useState([])
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef(null)
 
   const platformName = settings?.platformName || 'WorkSphere'
 
@@ -59,9 +64,31 @@ export default function ProfilePage() {
       location: userProfile?.location || '',
       bio: userProfile?.bio || '',
       experience_years: userProfile?.experience_years || 0,
+      hourly_rate: userProfile?.hourly_rate || 0,
       company: userProfile?.company || '',
     }
   })
+
+  // Profile image upload handler
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB'); return }
+    if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return }
+    setUploading(true)
+    try {
+      const storageRef = ref(storage, `profile_photos/${user.uid}_${Date.now()}`)
+      await uploadBytes(storageRef, file)
+      const photoURL = await getDownloadURL(storageRef)
+      await updateUserProfile({ photoURL })
+      toast.success('Profile photo updated!')
+    } catch (err) {
+      console.error('Upload error:', err)
+      toast.error('Failed to upload photo')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   const addSkill = () => {
     const s = skillInput.trim()
@@ -87,6 +114,7 @@ export default function ProfilePage() {
   const rating = userProfile?.rating || 0
   const isWorker = userProfile?.user_type === 'worker'
   const isEmployer = userProfile?.user_type === 'employer'
+  const isCustomer = userProfile?.user_type === 'customer'
   const memberSince = userProfile?.createdAt
     ? new Date(userProfile.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long' })
     : 'N/A'
@@ -105,8 +133,22 @@ export default function ProfilePage() {
         </div>
         <div className="px-6 pb-6">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between -mt-12 gap-4">
-            <div className="w-24 h-24 rounded-full bg-white shadow-lg ring-4 ring-white flex items-center justify-center text-primary-600 font-bold text-4xl">
-              {(userProfile?.name || user?.email || 'U')[0].toUpperCase()}
+            <div className="relative group">
+              {userProfile?.photoURL ? (
+                <img src={userProfile.photoURL} alt="Profile" loading="lazy" className="w-24 h-24 rounded-full object-cover shadow-lg ring-4 ring-white" />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-white shadow-lg ring-4 ring-white flex items-center justify-center text-primary-600 font-bold text-4xl">
+                  {(userProfile?.name || user?.email || 'U')[0].toUpperCase()}
+                </div>
+              )}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="absolute bottom-0 right-0 w-8 h-8 bg-primary-600 hover:bg-primary-700 text-white rounded-full flex items-center justify-center shadow-md transition-all opacity-0 group-hover:opacity-100 disabled:opacity-50"
+              >
+                {uploading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CameraIcon className="w-4 h-4" />}
+              </button>
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
             </div>
             <button onClick={() => setEditing(!editing)} className="btn-secondary flex items-center gap-2 w-fit">
               {editing ? <><XMarkIcon className="w-4 h-4" />Cancel</> : <><PencilIcon className="w-4 h-4" />Edit Profile</>}
@@ -191,6 +233,24 @@ export default function ProfilePage() {
                     placeholder="0"
                   />
                 </div>
+              </div>
+            )}
+
+            {/* Worker-specific: Hourly Rate */}
+            {isWorker && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Hourly Rate (₹)</label>
+                <div className="relative">
+                  <CurrencyRupeeIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="number"
+                    min={0}
+                    {...register('hourly_rate', { valueAsNumber: true, min: 0 })}
+                    className="input-field pl-10"
+                    placeholder="500"
+                  />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">Your per-hour service charge shown to customers</p>
               </div>
             )}
 
@@ -308,6 +368,13 @@ export default function ProfilePage() {
                   <p className="text-lg font-bold text-purple-700 dark:text-purple-300 count-pop">{bookingStats.completed}</p>
                   <p className="text-[10px] text-purple-500 dark:text-purple-400 font-medium">Jobs Done</p>
                 </div>
+                {userProfile?.hourly_rate > 0 && (
+                  <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 text-center stat-card col-span-2 sm:col-span-1">
+                    <CurrencyRupeeIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mx-auto mb-1 stat-icon-glow" />
+                    <p className="text-lg font-bold text-emerald-700 dark:text-emerald-300 count-pop">{formatCurrencyINR(userProfile.hourly_rate)}</p>
+                    <p className="text-[10px] text-emerald-500 dark:text-emerald-400 font-medium">Hourly Rate</p>
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -9,9 +9,8 @@ export default defineConfig({
     sourcemap: false,
     // Target modern browsers for smaller output
     target: 'es2020',
-    // Increase chunk warning threshold (our app intentionally splits)
-    chunkSizeWarningLimit: 600,
-    // Use default esbuild minifier (no extra deps needed)
+    // Increase chunk warning threshold (vendor libs are intentionally large)
+    chunkSizeWarningLimit: 1000,
     minify: 'esbuild',
     rollupOptions: {
       output: {
@@ -26,6 +25,8 @@ export default defineConfig({
           charts: ['recharts'],
           // Icons — large tree, split separately
           icons: ['@heroicons/react'],
+          // PDF generation — only loaded on invoice pages
+          pdf: ['html2pdf.js'],
         }
       }
     }
@@ -39,8 +40,12 @@ export default defineConfig({
       }
     }
   },
-  // Optimize dependency pre-bundling
+  // Optimize dependency pre-bundling for much faster localhost performance
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', 'firebase/app', 'firebase/auth', 'firebase/firestore'],
+    include: [
+      'react', 'react-dom', 'react-router-dom', 
+      'firebase/app', 'firebase/auth', 'firebase/firestore',
+      'lucide-react', '@heroicons/react/24/outline', '@heroicons/react/24/solid'
+    ],
   },
 })

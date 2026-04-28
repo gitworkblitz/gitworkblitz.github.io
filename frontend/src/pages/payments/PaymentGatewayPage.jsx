@@ -81,7 +81,7 @@ export default function PaymentGatewayPage() {
   // Step animation
   useEffect(() => {
     if (!processing || step < 0 || step >= STEPS.length - 1) return
-    const t = setTimeout(() => setStep(s => s + 1), 150)
+    const t = setTimeout(() => setStep(s => s + 1), 1200)
     return () => clearTimeout(t)
   }, [processing, step])
 

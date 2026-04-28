@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import useSEO from '../../hooks/useSEO'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import { useDataCache } from '../../context/DataCacheContext'
 import { SERVICE_CATEGORIES, dummyWorkers, formatCurrencyINR } from '../../utils/dummyData'
 import useDebounce from '../../hooks/useDebounce'
@@ -44,6 +45,7 @@ const CATEGORY_COLORS = {
 }
 
 export default function ServicesPage() {
+  const { isCustomer } = useAuth()
   const { services, loaded, error, refreshCache } = useDataCache()
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounce(search, 300)
@@ -223,9 +225,11 @@ export default function ServicesPage() {
             </>
           )}
         </div>
-        <Link to="/services/create" className="btn-primary text-sm px-5 py-2.5 self-start flex items-center gap-2">
-          <span className="text-lg">+</span> Post Service
-        </Link>
+        {!isCustomer && (
+          <Link to="/services/create" className="btn-primary text-sm px-5 py-2.5 self-start flex items-center gap-2">
+            <span className="text-lg">+</span> Post Service
+          </Link>
+        )}
       </div>
 
       {/* ============================================= */}
@@ -391,8 +395,8 @@ export default function ServicesPage() {
           icon={MagnifyingGlassIcon}
           title="No services found"
           description="Try adjusting your search or filters"
-          actionLabel="Post a Service"
-          actionTo="/services/create"
+          actionLabel={!isCustomer ? "Post a Service" : undefined}
+          actionTo={!isCustomer ? "/services/create" : undefined}
         />
       ) : (
         <>

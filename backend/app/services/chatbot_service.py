@@ -44,11 +44,11 @@ class ChatbotService:
                     headers={
                         "Authorization": f"Bearer {api_key}",
                         "Content-Type": "application/json",
-                        "HTTP-Referer": "http://localhost:5173",
+                        "HTTP-Referer": "https://worksphere.me",
                         "X-Title": "WorkSphere"
                     },
                     json={
-                        "model": "openai/gpt-3.5-turbo",
+                        "model": "openai/gpt-4o-mini",
                         "messages": messages,
                         "max_tokens": 300,
                         "temperature": 0.7
@@ -111,6 +111,22 @@ class ChatbotService:
         # Contact
         if any(w in msg for w in ["contact", "support", "help", "email", "phone"]):
             return "Need help? Email us at support@worksphere.com or visit the Help Center from the footer. You can also report issues from Dashboard → Report Issue. We're here to help! 📧"
+        
+        # Safety & Verification
+        if any(w in msg for w in ["safe", "trust", "verify", "verified", "background", "check"]):
+            return "All workers on WorkSphere are verified through ID checks and skill assessments. Look for the verified badge on profiles. Workers with 4.5+ ratings are recommended for best service! 🛡️"
+        
+        # Discounts & Offers
+        if any(w in msg for w in ["discount", "offer", "coupon", "promo", "deal"]):
+            return "Check the Offers section for active coupons and discounts! We regularly run promotions for new users and during festival seasons. Apply coupons at checkout. 🎁"
+        
+        # Availability
+        if any(w in msg for w in ["available", "timing", "hours", "open", "when"]):
+            return "Services are available 7 days a week. Most workers accept bookings from 8 AM to 9 PM. Check each worker's profile for their specific availability before booking. 🕐"
+        
+        # Registration
+        if any(w in msg for w in ["register", "sign up", "create account", "new user", "join"]):
+            return "Sign up with your email, choose your role (Customer, Worker, or Employer), and complete your profile. It takes less than 2 minutes! Visit /signup to get started. 🎉"
         
         # Greeting
         if any(w in msg for w in ["hello", "hi", "hey", "thanks", "thank"]):

@@ -73,9 +73,13 @@ export default function WorkerProfilePage() {
             <div className="flex flex-col md:flex-row gap-6 md:items-center">
               
               {/* Avatar */}
-              <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full ${worker.avatar_color || 'bg-primary-600'} flex items-center justify-center text-white font-bold text-4xl shadow-lg flex-shrink-0 mx-auto md:mx-0`}>
-                {(worker.name || 'W')[0]}
-              </div>
+              {worker.photoURL ? (
+                <img src={worker.photoURL} alt={worker.name} loading="lazy" className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover shadow-lg flex-shrink-0 mx-auto md:mx-0 ring-4 ring-white dark:ring-gray-800" />
+              ) : (
+                <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full ${worker.avatar_color || 'bg-primary-600'} flex items-center justify-center text-white font-bold text-4xl shadow-lg flex-shrink-0 mx-auto md:mx-0`}>
+                  {(worker.name || 'W')[0]}
+                </div>
+              )}
               
               {/* Core Info */}
               <div className="flex-1 text-center md:text-left">

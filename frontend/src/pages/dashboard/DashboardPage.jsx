@@ -179,6 +179,8 @@ export default function DashboardPage() {
   })
   const [recentBookings, setRecentBookings] = useState([])
   const [recentActivity, setRecentActivity] = useState([])
+  const [recentInvoices, setRecentInvoices] = useState([])
+  const [recentApps, setRecentApps] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   
@@ -222,30 +224,22 @@ export default function DashboardPage() {
         setStats(parsed.stats)
         if (parsed.recentBookings) setRecentBookings(parsed.recentBookings)
         if (parsed.recentActivity) setRecentActivity(parsed.recentActivity)
+        if (parsed.recentInvoices) setRecentInvoices(parsed.recentInvoices)
+        if (parsed.recentApps) setRecentApps(parsed.recentApps)
         setLoading(false) // Show UI immediately
       } catch (e) {}
     }
 
     try {
-      // Fetch bookings (bounded) — no retry / no setTimeout
-      const bookings = await getUserBookings(user.uid, 50)
-      const freshRecentBookings = bookings.slice(0, 5)
-
-      if (!cachedStats) {
-        setRecentBookings(freshRecentBookings)
-      }
-
-      const paid = bookings.filter(b => b.payment_status === 'paid')
-      const pending = bookings.filter(b => b.status === 'requested' || b.status === 'accepted')
-      const active = bookings.filter(b => b.status === 'accepted' || b.status === 'on_the_way')
-      const completed = bookings.filter(b => b.status === 'completed' || b.status === 'reviewed')
-      const unpaid = bookings.filter(b => b.payment_status !== 'paid' && b.status !== 'cancelled')
+      // Start fetching bookings immediately to run in parallel with role queries
+      const bookingsPromise = getUserBookings(user.uid, 50).catch(() => [])
 
       let serviceCount = 0, jobCount = 0, gigCount = 0, appCount = 0
       let appliedCount = 0, shortlistedCount = 0, rejectedCount = 0
       let invoiceCount = 0
 
-      const rolePromises = []
+      let recentInvoicesData = []
+      let recentAppsData = []
 
       if (isWorker) {
         rolePromises.push(
@@ -275,15 +269,38 @@ export default function DashboardPage() {
         )
       }
 
-      if (isCustomer) {
+      if (isCustomer || isWorker) {
         rolePromises.push(
-          getQueryCount('invoices', 'user_id', '==', user.uid)
-            .then(count => { invoiceCount = count })
-            .catch(() => { invoiceCount = 0 })
+          Promise.all([
+            queryDocumentsLimited('invoices', 'user_id', '==', user.uid, 5).catch(() => []),
+            queryDocumentsLimited('job_applications', 'applicant_id', '==', user.uid, 5).catch(() => []),
+            queryDocumentsLimited('gig_applications', 'applicant_id', '==', user.uid, 5).catch(() => [])
+          ]).then(([invs, jApps, gApps]) => {
+            recentInvoicesData = invs
+            invoiceCount = invs.length // approximate if <=5, else could do getQueryCount
+            recentAppsData = [...jApps, ...gApps].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5)
+          })
         )
       }
 
+      // Add bookingsPromise to the promise array to await them all together
+      rolePromises.push(bookingsPromise)
+
       await Promise.all(rolePromises)
+
+      // Resolve bookings
+      const bookings = await bookingsPromise
+      const freshRecentBookings = bookings.slice(0, 5)
+
+      if (!cachedStats) {
+        setRecentBookings(freshRecentBookings)
+      }
+
+      const paid = bookings.filter(b => b.payment_status === 'paid')
+      const pending = bookings.filter(b => b.status === 'requested' || b.status === 'accepted')
+      const active = bookings.filter(b => b.status === 'accepted' || b.status === 'on_the_way')
+      const completed = bookings.filter(b => b.status === 'completed' || b.status === 'reviewed')
+      const unpaid = bookings.filter(b => b.payment_status !== 'paid' && b.status !== 'cancelled')
 
       // Synthesize unified "Recent Activity" feed
       const activities = []
@@ -354,12 +371,16 @@ export default function DashboardPage() {
       setStats(freshStats)
       setRecentBookings(freshRecentBookings)
       setRecentActivity(activities.slice(0, 10))
+      setRecentInvoices(recentInvoicesData)
+      setRecentApps(recentAppsData)
       
       // Save to cache
       localStorage.setItem(`dash_stats_${user.uid}`, JSON.stringify({
         stats: freshStats,
         recentBookings: freshRecentBookings,
-        recentActivity: activities.slice(0, 10)
+        recentActivity: activities.slice(0, 10),
+        recentInvoices: recentInvoicesData,
+        recentApps: recentAppsData
       }))
     } catch (err) {
       console.error(err)
@@ -480,12 +501,15 @@ export default function DashboardPage() {
     const userSkills = (userProfile?.skills || []).map(s => s.toLowerCase())
     const userLocation = (userProfile?.location || '').toLowerCase()
 
+    // Optimization: limit to 50 to prevent heavy processing
+    const servicesToProcess = cachedServices.slice(0, 50)
+
     if (!userSkills.length && !userLocation) {
       // Fallback: sort by rating desc
-      return [...cachedServices].sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 3)
+      return servicesToProcess.sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 3)
     }
 
-    const scored = cachedServices.map(svc => {
+    const scored = servicesToProcess.map(svc => {
       let score = 0
       const cat = (svc.category || '').toLowerCase()
       const title = (svc.title || '').toLowerCase()
@@ -511,11 +535,14 @@ export default function DashboardPage() {
     const userSkills = (userProfile?.skills || []).map(s => s.toLowerCase())
     const userLocation = (userProfile?.location || '').toLowerCase()
 
+    // Optimization: limit to 50 to prevent heavy processing
+    const jobsToProcess = cachedJobs.slice(0, 50)
+
     if (!userSkills.length && !userLocation) {
-      return cachedJobs.slice(0, 3)
+      return jobsToProcess.slice(0, 3)
     }
 
-    const scored = cachedJobs.map(job => {
+    const scored = jobsToProcess.map(job => {
       let score = 0
       const title = (job.title || '').toLowerCase()
       const cat = (job.category || '').toLowerCase()
@@ -538,6 +565,38 @@ export default function DashboardPage() {
 
     return scored.sort((a, b) => b._score - a._score).slice(0, 3)
   }, [cachedJobs, userProfile?.skills, userProfile?.location])
+
+  const recommendedGigs = useMemo(() => {
+    if (!cachedGigs.length) return []
+    const userSkills = (userProfile?.skills || []).map(s => s.toLowerCase())
+    const userLocation = (userProfile?.location || '').toLowerCase()
+
+    const gigsToProcess = cachedGigs.slice(0, 50)
+
+    if (!userSkills.length && !userLocation) {
+      return gigsToProcess.slice(0, 3)
+    }
+
+    const scored = gigsToProcess.map(gig => {
+      let score = 0
+      const title = (gig.title || '').toLowerCase()
+      const cat = (gig.category || '').toLowerCase()
+      const loc = (gig.location || '').toLowerCase()
+      const reqSkills = (gig.skills || []).map(s => s.toLowerCase())
+
+      for (const skill of userSkills) {
+        if (title.includes(skill) || cat.includes(skill) || reqSkills.includes(skill)) {
+          score += 50; break
+        }
+      }
+      if (userLocation && loc.includes(userLocation.split(',')[0].trim())) score += 30
+      score += Math.min((gig.budget || 0) / 10000 * 20, 20)
+
+      return { ...gig, _score: score }
+    })
+
+    return scored.sort((a, b) => b._score - a._score).slice(0, 3)
+  }, [cachedGigs, userProfile?.skills, userProfile?.location])
 
   const getStatusConfig = useCallback((status) => {
     const configs = {
@@ -861,7 +920,7 @@ export default function DashboardPage() {
               </Link>
             </motion.div>
           ))}
-          {(isWorker || isEmployer) && recommendedJobs.map((job) => (
+          {(isWorker || isEmployer || isCustomer) && recommendedJobs.map((job) => (
             <motion.div key={job.id} variants={itemVariants} whileHover={{ y: -2 }}>
               <Link to={`/jobs/${job.id}`} className="block bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-all group border border-transparent hover:border-purple-200 dark:hover:border-purple-800">
                 <div className="flex items-center gap-3 mb-2">
@@ -879,6 +938,27 @@ export default function DashboardPage() {
                     <span className="capitalize bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded-full text-[10px] font-medium">{(job.employment_type || 'full_time').replace('_', ' ')}</span>
                   </div>
                   {job.salary_min && <span className="text-sm font-bold text-purple-600 dark:text-purple-400">₹{(job.salary_min/100000).toFixed(0)}L+</span>}
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+          {(isWorker || isEmployer || isCustomer) && recommendedGigs.map((gig) => (
+            <motion.div key={gig.id} variants={itemVariants} whileHover={{ y: -2 }}>
+              <Link to={`/gigs/${gig.id}`} className="block bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 hover:bg-orange-50 dark:hover:bg-orange-900/10 transition-all group border border-transparent hover:border-orange-200 dark:hover:border-orange-800">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <RocketLaunchIcon className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate group-hover:text-orange-600 transition-colors">{gig.title}</p>
+                    <p className="text-xs text-gray-400 truncate">{gig.category || 'Gig'}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  <div className="flex items-center gap-2 text-xs text-gray-400">
+                    <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{(gig.location || 'Remote').split(',')[0]}</span>
+                  </div>
+                  {gig.budget && <span className="text-sm font-bold text-orange-600 dark:text-orange-400">{formatCurrencyINR(gig.budget)}</span>}
                 </div>
               </Link>
             </motion.div>
@@ -938,10 +1018,20 @@ export default function DashboardPage() {
             <div className="w-14 h-14 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-3">
               <History className="w-7 h-7 text-gray-400" />
             </div>
-            <p className="text-gray-400 dark:text-gray-500 text-sm font-medium">No activity yet</p>
-            <Link to="/services" className="text-primary-600 text-sm font-medium mt-2 inline-flex items-center gap-1 hover:text-primary-700">
-              Browse services <ArrowRightIcon className="w-3 h-3" />
-            </Link>
+            <p className="text-gray-400 dark:text-gray-500 text-sm font-medium mb-3">No activity yet</p>
+            {isWorker ? (
+              <Link to="/services/create" className="btn-primary inline-flex items-center gap-2">
+                Post your first service
+              </Link>
+            ) : isEmployer ? (
+              <Link to="/jobs/create" className="btn-primary inline-flex items-center gap-2">
+                Post your first job
+              </Link>
+            ) : (
+              <Link to="/services" className="btn-primary inline-flex items-center gap-2">
+                Browse services
+              </Link>
+            )}
           </motion.div>
         ) : (
           <motion.div variants={containerVariants} className="space-y-3 mt-4">
@@ -962,6 +1052,98 @@ export default function DashboardPage() {
           </motion.div>
         )}
       </motion.div>
+
+      {/* Payment & Invoice History */}
+      {isCustomer && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Payment History */}
+          <motion.div variants={sectionVariants} className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <CurrencyRupeeIcon className="w-5 h-5 text-emerald-500" />
+                Payment History
+              </h2>
+              <Link to="/payments" className="text-primary-600 hover:text-primary-700 text-sm font-medium">View all</Link>
+            </div>
+            {recentBookings.filter(b => b.payment_status === 'paid').length === 0 ? (
+              <p className="text-sm text-gray-400">No recent payments.</p>
+            ) : (
+              <div className="space-y-3">
+                {recentBookings.filter(b => b.payment_status === 'paid').slice(0, 3).map(b => (
+                  <div key={b.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center"><CheckCircleIcon className="w-4 h-4" /></div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{b.service_title || 'Service Payment'}</p>
+                        <p className="text-xs text-gray-500">Paid on {b.updated_at ? new Date(b.updated_at).toLocaleDateString() : 'recently'}</p>
+                      </div>
+                    </div>
+                    <span className="font-bold text-gray-900 dark:text-white">{formatCurrencyINR(b.amount || b.price || 0)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+
+          {/* Invoice History */}
+          <motion.div variants={sectionVariants} className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Receipt className="w-5 h-5 text-purple-500" />
+                Invoice History
+              </h2>
+              <Link to="/invoices" className="text-primary-600 hover:text-primary-700 text-sm font-medium">View all</Link>
+            </div>
+            {recentInvoices.length === 0 ? (
+              <p className="text-sm text-gray-400">No invoices generated yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {recentInvoices.slice(0, 3).map(inv => (
+                  <div key={inv.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center"><DocumentTextIcon className="w-4 h-4" /></div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">INV-{inv.id.slice(0,6).toUpperCase()}</p>
+                        <p className="text-xs text-gray-500">{new Date(inv.createdAt).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                    <Link to={`/invoices/${inv.id}`} className="text-primary-600 hover:bg-primary-50 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors">Download</Link>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </div>
+      )}
+
+      {/* My Applications (for customers who apply to jobs/gigs) */}
+      {(isCustomer || isWorker) && recentApps.length > 0 && (
+        <motion.div variants={sectionVariants} className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <Send className="w-5 h-5 text-indigo-500" />
+              My Applications
+            </h2>
+            <Link to="/dashboard/applications" className="text-primary-600 hover:text-primary-700 text-sm font-medium">View all</Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {recentApps.slice(0, 3).map(app => (
+              <div key={app.id} className="border border-gray-100 dark:border-gray-800 rounded-lg p-4 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 uppercase">{app.type || 'Job'}</span>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${app.status === 'accepted' ? 'bg-green-100 text-green-700' : app.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                      {app.status || 'Applied'}
+                    </span>
+                  </div>
+                  <p className="font-semibold text-gray-900 dark:text-white">{app.title || 'Application'}</p>
+                </div>
+                <p className="text-xs text-gray-500 mt-3 flex items-center gap-1"><ClockIcon className="w-3 h-3"/> Applied {new Date(app.createdAt).toLocaleDateString()}</p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Booking Form Modal */}
       {showBookingModal && (

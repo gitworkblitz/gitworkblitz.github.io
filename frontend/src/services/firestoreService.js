@@ -24,7 +24,7 @@ const executeWithTimeout = (promise, fallbackResult) => {
 
 // Read timeout — generous enough for real data to arrive,
 // short enough to not block UI forever if offline
-const READ_TIMEOUT_MS = 800
+const READ_TIMEOUT_MS = 5000
 const readWithTimeout = (promise, fallback) => {
   return Promise.race([
     promise,
