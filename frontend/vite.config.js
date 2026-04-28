@@ -1,8 +1,17 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import viteCompression from 'vite-plugin-compression'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    viteCompression({
+      algorithm: 'gzip',
+      ext: '.gz',
+      threshold: 10240, // only compress files > 10kb
+      deleteOriginFile: false
+    })
+  ],
   base: '/',
   build: {
     outDir: 'dist',
@@ -14,6 +23,9 @@ export default defineConfig({
     minify: 'esbuild',
     rollupOptions: {
       output: {
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
         manualChunks: {
           // Core React — cached aggressively, rarely changes
           vendor: ['react', 'react-dom', 'react-router-dom'],
@@ -24,7 +36,7 @@ export default defineConfig({
           // Charts — only used by admin dashboard
           charts: ['recharts'],
           // Icons — large tree, split separately
-          icons: ['@heroicons/react'],
+          icons: ['@heroicons/react', 'lucide-react'],
           // PDF generation — only loaded on invoice pages
           pdf: ['html2pdf.js'],
         }

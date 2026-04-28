@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, Suspense } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { DashboardSkeleton } from '../components/SkeletonLoader'
 import {
   Squares2X2Icon, UsersIcon, WrenchScrewdriverIcon, CalendarIcon,
   BriefcaseIcon, StarIcon, DocumentTextIcon, FlagIcon, Cog6ToothIcon,
@@ -129,7 +130,9 @@ export default function AdminLayout() {
         </div>
 
         <div className="p-4 lg:p-6">
-          <Outlet />
+          <Suspense fallback={<DashboardSkeleton />}>
+            <Outlet />
+          </Suspense>
         </div>
       </main>
     </div>

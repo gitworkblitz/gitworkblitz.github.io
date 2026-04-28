@@ -1,10 +1,11 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, Suspense } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { useSettings } from '../context/SettingsContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import NotificationBell from '../components/NotificationBell'
+import { DashboardSkeleton } from '../components/SkeletonLoader'
 import {
   Home, Calendar, Wrench,
   Briefcase, DollarSign, FileText,
@@ -316,7 +317,9 @@ export default function DashboardLayout() {
         </div>
 
         <main className="flex-1 overflow-y-auto">
-          <Outlet />
+          <Suspense fallback={<DashboardSkeleton />}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </div>

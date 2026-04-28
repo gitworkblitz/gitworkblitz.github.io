@@ -67,8 +67,7 @@ async function fetchBotResponse(message, history) {
   }
 }
 
-export default function Chatbot() {
-  const [open, setOpen] = useState(false)
+export default function Chatbot({ open, setOpen }) {
   const [messages, setMessages] = useState([
     { id: 1, text: "Hi! I'm WorkSphere Assistant 😊 Ask me about booking services, payments, jobs, or anything about the platform!", from: 'bot' }
   ])
@@ -117,26 +116,6 @@ export default function Chatbot() {
 
   return (
     <>
-      <AnimatePresence>
-        {!open && (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1, y: [0, -6, 0] }}
-            exit={{ scale: 0 }}
-            transition={{ y: { duration: 3, repeat: Infinity, ease: 'easeInOut' }, scale: { duration: 0.3 } }}
-            className="fixed bottom-6 right-6 z-40"
-          >
-            <button
-              onClick={() => setOpen(true)}
-              className="chat-float-btn w-14 h-14 bg-gradient-to-br from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group hover:scale-110 active:scale-95"
-              aria-label="Open chat">
-              <ChatBubbleLeftRightIcon className="w-6 h-6 group-hover:scale-110 transition-transform" />
-              <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-white dark:border-gray-950 chat-online-dot" />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <AnimatePresence>
         {open && (
           <motion.div

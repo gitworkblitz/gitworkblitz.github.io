@@ -18,71 +18,91 @@ import { PageSkeleton } from './components/SkeletonLoader'
 
 import HomePage from './pages/home/HomePage'
 
-// ─── Secondary public pages: lazy loaded ────────────────────────────────────
-const LoginPage         = lazy(() => import('./pages/auth/LoginPage'))
-const SignupPage        = lazy(() => import('./pages/auth/SignupPage'))
-const JobsPage          = lazy(() => import('./pages/jobs/JobsPage'))
-const GigsPage          = lazy(() => import('./pages/gigs/GigsPage'))
-const ServicesPage      = lazy(() => import('./pages/services/ServicesPage'))
+// ─── Retry wrapper for dynamic imports (fixes production chunk errors) ───
+const lazyWithRetry = (componentImport) =>
+  lazy(async () => {
+    const pageHasAlreadyBeenForceRefreshed = JSON.parse(
+      window.sessionStorage.getItem('page-has-been-force-refreshed') || 'false'
+    )
+    try {
+      const component = await componentImport()
+      window.sessionStorage.setItem('page-has-been-force-refreshed', 'false')
+      return component
+    } catch (error) {
+      if (!pageHasAlreadyBeenForceRefreshed) {
+        // Assume chunk is missing due to a new deployment; hard reload the page
+        window.sessionStorage.setItem('page-has-been-force-refreshed', 'true')
+        window.location.reload()
+      }
+      throw error
+    }
+  })
 
 // ─── Secondary public pages: lazy loaded ────────────────────────────────────
-const ServiceDetailPage = lazy(() => import('./pages/services/ServiceDetailPage'))
-const JobDetailsPage    = lazy(() => import('./pages/jobs/JobDetailsPage'))
-const JobApplicantsPage = lazy(() => import('./pages/jobs/JobApplicantsPage'))
-const GigDetailsPage    = lazy(() => import('./pages/gigs/GigDetailsPage'))
-const BlogPage          = lazy(() => import('./pages/blog/BlogPage'))
-const GigApplicantsPage = lazy(() => import('./pages/gigs/GigApplicantsPage'))
-const FindWorkersPage   = lazy(() => import('./pages/workers/FindWorkersPage'))
-const WorkerProfilePage = lazy(() => import('./pages/workers/WorkerProfilePage'))
-const AboutPage         = lazy(() => import('./pages/about/AboutPage'))
-const ContactPage       = lazy(() => import('./pages/contact/ContactPage'))
-const PrivacyPolicyPage = lazy(() => import('./pages/legal/PrivacyPolicyPage'))
-const TermsPage         = lazy(() => import('./pages/legal/TermsPage'))
-const HelpCenterPage    = lazy(() => import('./pages/support/HelpCenterPage'))
-const FAQPage           = lazy(() => import('./pages/support/FAQPage'))
-const ReportIssuePage   = lazy(() => import('./pages/support/ReportIssuePage'))
-const FeedbackPage      = lazy(() => import('./pages/support/FeedbackPage'))
+const LoginPage         = lazyWithRetry(() => import('./pages/auth/LoginPage'))
+const SignupPage        = lazyWithRetry(() => import('./pages/auth/SignupPage'))
+const JobsPage          = lazyWithRetry(() => import('./pages/jobs/JobsPage'))
+const GigsPage          = lazyWithRetry(() => import('./pages/gigs/GigsPage'))
+const ServicesPage      = lazyWithRetry(() => import('./pages/services/ServicesPage'))
+
+// ─── Secondary public pages: lazy loaded ────────────────────────────────────
+const ServiceDetailPage = lazyWithRetry(() => import('./pages/services/ServiceDetailPage'))
+const JobDetailsPage    = lazyWithRetry(() => import('./pages/jobs/JobDetailsPage'))
+const JobApplicantsPage = lazyWithRetry(() => import('./pages/jobs/JobApplicantsPage'))
+const GigDetailsPage    = lazyWithRetry(() => import('./pages/gigs/GigDetailsPage'))
+const BlogPage          = lazyWithRetry(() => import('./pages/blog/BlogPage'))
+const GigApplicantsPage = lazyWithRetry(() => import('./pages/gigs/GigApplicantsPage'))
+const FindWorkersPage   = lazyWithRetry(() => import('./pages/workers/FindWorkersPage'))
+const WorkerProfilePage = lazyWithRetry(() => import('./pages/workers/WorkerProfilePage'))
+const AboutPage         = lazyWithRetry(() => import('./pages/about/AboutPage'))
+const ContactPage       = lazyWithRetry(() => import('./pages/contact/ContactPage'))
+const PrivacyPolicyPage = lazyWithRetry(() => import('./pages/legal/PrivacyPolicyPage'))
+const TermsPage         = lazyWithRetry(() => import('./pages/legal/TermsPage'))
+const HelpCenterPage    = lazyWithRetry(() => import('./pages/support/HelpCenterPage'))
+const FAQPage           = lazyWithRetry(() => import('./pages/support/FAQPage'))
+const ReportIssuePage   = lazyWithRetry(() => import('./pages/support/ReportIssuePage'))
+const FeedbackPage      = lazyWithRetry(() => import('./pages/support/FeedbackPage'))
 
 // ─── Dashboard (auth-gated, always lazy) ────────────────────────────────────
-const DashboardPage     = lazy(() => import('./pages/dashboard/DashboardPage'))
-const MyBookings        = lazy(() => import('./pages/dashboard/MyBookings'))
-const MyServices        = lazy(() => import('./pages/dashboard/MyServices'))
-const MyJobs            = lazy(() => import('./pages/dashboard/MyJobs'))
-const MyGigs            = lazy(() => import('./pages/dashboard/MyGigs'))
-const MyApplications    = lazy(() => import('./pages/dashboard/MyApplications'))
-const ProfilePage       = lazy(() => import('./pages/profile/ProfilePage'))
-const BookingsPage      = lazy(() => import('./pages/bookings/BookingsPage'))
-const BookingDetailPage = lazy(() => import('./pages/bookings/BookingDetailPage'))
-const PaymentsPage      = lazy(() => import('./pages/payments/PaymentsPage'))
-const PaymentGatewayPage = lazy(() => import('./pages/payments/PaymentGatewayPage'))
-const InvoicesPage      = lazy(() => import('./pages/invoices/InvoicesPage'))
-const InvoiceViewPage   = lazy(() => import('./pages/invoices/InvoiceViewPage'))
-const CreateServicePage = lazy(() => import('./pages/services/CreateServicePage'))
-const CreateJobPage     = lazy(() => import('./pages/jobs/CreateJobPage'))
-const CreateGigPage     = lazy(() => import('./pages/gigs/CreateGigPage'))
+const DashboardPage     = lazyWithRetry(() => import('./pages/dashboard/DashboardPage'))
+const MyBookings        = lazyWithRetry(() => import('./pages/dashboard/MyBookings'))
+const MyServices        = lazyWithRetry(() => import('./pages/dashboard/MyServices'))
+const MyJobs            = lazyWithRetry(() => import('./pages/dashboard/MyJobs'))
+const MyGigs            = lazyWithRetry(() => import('./pages/dashboard/MyGigs'))
+const MyApplications    = lazyWithRetry(() => import('./pages/dashboard/MyApplications'))
+const ProfilePage       = lazyWithRetry(() => import('./pages/profile/ProfilePage'))
+const BookingsPage      = lazyWithRetry(() => import('./pages/bookings/BookingsPage'))
+const BookingDetailPage = lazyWithRetry(() => import('./pages/bookings/BookingDetailPage'))
+const PaymentsPage      = lazyWithRetry(() => import('./pages/payments/PaymentsPage'))
+const PaymentGatewayPage = lazyWithRetry(() => import('./pages/payments/PaymentGatewayPage'))
+const InvoicesPage      = lazyWithRetry(() => import('./pages/invoices/InvoicesPage'))
+const InvoiceViewPage   = lazyWithRetry(() => import('./pages/invoices/InvoiceViewPage'))
+const CreateServicePage = lazyWithRetry(() => import('./pages/services/CreateServicePage'))
+const CreateJobPage     = lazyWithRetry(() => import('./pages/jobs/CreateJobPage'))
+const CreateGigPage     = lazyWithRetry(() => import('./pages/gigs/CreateGigPage'))
 
 // ─── Admin: heavy, always lazy ──────────────────────────────────────────────
-const AdminDashboard  = lazy(() => import('./pages/admin/AdminDashboard'))
-const ManageUsers     = lazy(() => import('./pages/admin/ManageUsers'))
-const ManageServices  = lazy(() => import('./pages/admin/ManageServices'))
-const ManageBookings  = lazy(() => import('./pages/admin/ManageBookings'))
-const ManageJobs      = lazy(() => import('./pages/admin/ManageJobs'))
-const ManageGigs      = lazy(() => import('./pages/admin/ManageGigs'))
-const ManageReviews   = lazy(() => import('./pages/admin/ManageReviews'))
-const ManageReports   = lazy(() => import('./pages/admin/ManageReports'))
-const ManageContacts  = lazy(() => import('./pages/admin/ManageContacts'))
-const ManageFeedback  = lazy(() => import('./pages/admin/ManageFeedback'))
-const AdminSettings   = lazy(() => import('./pages/admin/AdminSettings'))
-const ManagePayments  = lazy(() => import('./pages/admin/ManagePayments'))
-const ManageInvoices  = lazy(() => import('./pages/admin/ManageInvoices'))
-const ManageBlogs     = lazy(() => import('./pages/admin/ManageBlogs'))
-const ManageOffers    = lazy(() => import('./pages/admin/ManageOffers'))
-const ManageAnnouncements = lazy(() => import('./pages/admin/ManageAnnouncements'))
+const AdminDashboard  = lazyWithRetry(() => import('./pages/admin/AdminDashboard'))
+const ManageUsers     = lazyWithRetry(() => import('./pages/admin/ManageUsers'))
+const ManageServices  = lazyWithRetry(() => import('./pages/admin/ManageServices'))
+const ManageBookings  = lazyWithRetry(() => import('./pages/admin/ManageBookings'))
+const ManageJobs      = lazyWithRetry(() => import('./pages/admin/ManageJobs'))
+const ManageGigs      = lazyWithRetry(() => import('./pages/admin/ManageGigs'))
+const ManageReviews   = lazyWithRetry(() => import('./pages/admin/ManageReviews'))
+const ManageReports   = lazyWithRetry(() => import('./pages/admin/ManageReports'))
+const ManageContacts  = lazyWithRetry(() => import('./pages/admin/ManageContacts'))
+const ManageFeedback  = lazyWithRetry(() => import('./pages/admin/ManageFeedback'))
+const AdminSettings   = lazyWithRetry(() => import('./pages/admin/AdminSettings'))
+const ManagePayments  = lazyWithRetry(() => import('./pages/admin/ManagePayments'))
+const ManageInvoices  = lazyWithRetry(() => import('./pages/admin/ManageInvoices'))
+const ManageBlogs     = lazyWithRetry(() => import('./pages/admin/ManageBlogs'))
+const ManageOffers    = lazyWithRetry(() => import('./pages/admin/ManageOffers'))
+const ManageAnnouncements = lazyWithRetry(() => import('./pages/admin/ManageAnnouncements'))
 
 // ─── Misc ────────────────────────────────────────────────────────────────────
-const Chatbot         = lazy(() => import('./components/Chatbot'))
-const NotFoundPage    = lazy(() => import('./pages/NotFoundPage'))
-const MaintenancePage = lazy(() => import('./pages/MaintenancePage'))
+const ChatbotLauncher = lazyWithRetry(() => import('./components/ChatbotLauncher'))
+const NotFoundPage    = lazyWithRetry(() => import('./pages/NotFoundPage'))
+const MaintenancePage = lazyWithRetry(() => import('./pages/MaintenancePage'))
 
 const qc = new QueryClient({
   defaultOptions: {
@@ -125,8 +145,7 @@ function AppInner() {
 
       <ScrollToTop />
 
-      <SuspenseWrap>
-        <Routes>
+      <Routes>
           {/* Auth */}
           <Route element={<AuthLayout />}>
             <Route path="/login"  element={<LoginPage />} />
@@ -199,11 +218,10 @@ function AppInner() {
             <Route path="/admin/settings"      element={<ProtectedRoute adminOnly><AdminSettings /></ProtectedRoute>} />
           </Route>
 
-          <Route path="*" element={<NotFoundPage />} />
+          <Route path="*" element={<SuspenseWrap><NotFoundPage /></SuspenseWrap>} />
         </Routes>
-      </SuspenseWrap>
 
-      <SuspenseWrap><Chatbot /></SuspenseWrap>
+      <SuspenseWrap><ChatbotLauncher /></SuspenseWrap>
     </>
   )
 }
