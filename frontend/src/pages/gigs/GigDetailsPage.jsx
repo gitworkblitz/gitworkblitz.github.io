@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import useSEO from '../../hooks/useSEO'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getGigById, applyToGig, hasUserAppliedToGig, completeGig } from '../../services/firestoreService'
@@ -165,6 +166,14 @@ export default function GigDetailsPage() {
 
   if (loading) return <DetailSkeleton />
   if (!gig) return null
+
+  // Dynamic SEO for this specific gig
+  useSEO({
+    title: `${gig.title} — Freelance Gig | WorkSphere`,
+    description: `Apply for "${gig.title}" gig on WorkSphere. Budget: ${formatCurrencyINR(Number(gig.price || gig.budget || 0))}. Category: ${gig.category || 'Freelance'}. Duration: ${gig.duration || 'Flexible'}. India's gig marketplace.`,
+    keywords: `${gig.category || 'freelance'} gigs, ${gig.title}, gig marketplace, freelance gigs India, WorkSphere`,
+    url: `https://wsphere.me/gigs/${id}`
+  })
 
   const isOwner = user && (gig.employer_id === user.uid || gig.posted_by === user.uid)
   const isAssigned = user && gig.assignedTo === user.uid

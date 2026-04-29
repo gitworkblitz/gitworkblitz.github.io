@@ -1,10 +1,30 @@
+# https://www.robotstxt.org/robotstxt.html
 User-agent: *
 Allow: /
-Disallow: /dashboard
-Disallow: /admin
-Disallow: /profile
-Disallow: /payments
-Disallow: /invoices
-Disallow: /bookings
 
-Sitemap: https://worksphere.me/sitemap.xml
+# Disallow admin and dashboard routes (auth-gated)
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /profile
+Disallow: /bookings/
+Disallow: /payments/
+Disallow: /invoices/
+Disallow: /login
+Disallow: /signup
+
+# Allow important public pages
+Allow: /services
+Allow: /jobs
+Allow: /gigs
+Allow: /blog
+Allow: /find-workers
+Allow: /about
+Allow: /contact
+Allow: /faq
+Allow: /help
+
+# Sitemap
+Sitemap: https://wsphere.me/sitemap.xml
+
+# Crawl-delay (be gentle on GitHub Pages)
+Crawl-delay: 1

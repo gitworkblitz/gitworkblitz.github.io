@@ -42,9 +42,14 @@ export default function WorkerProfilePage() {
   }, [loadWorker])
 
   useSEO({
-    title: worker ? `${worker.name} - ${worker.category || 'Professional'} | WorkSphere` : 'Worker Profile | WorkSphere',
-    description: worker ? `Hire ${worker.name}, an expert ${worker.category || 'professional'} on WorkSphere.` : 'View professional worker profiles on WorkSphere.',
-    keywords: worker ? `${worker.name}, ${worker.category}, worksphere, hire professional` : 'worksphere worker, hire',
+    title: worker ? `${worker.name} \u2014 ${worker.category || 'Professional'} for Hire | WorkSphere` : 'Worker Profile | WorkSphere',
+    description: worker
+      ? `Hire ${worker.name}, a verified ${worker.category || 'professional'} on WorkSphere. ${worker.experience_years || 0}+ years experience, ${worker.rating || 0}\u2605 rated. Book instantly on India's workforce platform.`
+      : 'Browse verified professional worker profiles on WorkSphere. Hire trusted experts across 20+ categories.',
+    keywords: worker
+      ? `${worker.name}, ${worker.category} professional, hire ${worker.category}, workforce platform India, WorkSphere`
+      : 'hire professionals, WorkSphere workers, verified workers India',
+    url: `https://wsphere.me/workers/${id}`
   })
 
   if (loading) return <PageSkeleton />

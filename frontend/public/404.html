@@ -1,23 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>WorkSphere — Redirecting...</title>
-  <script>
-    // GitHub Pages SPA redirect trick
-    // Converts 404 paths into query params so index.html can handle them via React Router
-    var pathSegmentsToKeep = 0;
-    var l = window.location;
-    l.replace(
-      l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-      l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
-      l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
-      (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-      l.hash
-    );
-  </script>
-</head>
-<body>
-  <p>Redirecting&hellip;</p>
-</body>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>WorkSphere | Services, Jobs & Gigs Platform in India</title>
+    <script>
+      // GitHub Pages SPA redirect — replaces 404 with hash-based redirect
+      // so React Router can handle all routes properly
+      var pathSegmentsToKeep = 0;
+      var l = window.location;
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
+        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+        l.hash
+      );
+    </script>
+  </head>
+  <body></body>
 </html>

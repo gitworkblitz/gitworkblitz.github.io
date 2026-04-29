@@ -56,10 +56,11 @@ export default function ServicesPage() {
   const [showAllCategories, setShowAllCategories] = useState(false)
 
   useSEO({
-    title: category ? `${category} Services | WorkSphere` : 'Services — Book Trusted Professionals | WorkSphere',
-    description: `Book trusted ${category || 'home'} professionals for your needs. Verified experts, instant booking, and secure payments on WorkSphere.`,
-    keywords: `${category || 'services'}, worksphere services, hire professionals, local services`,
-    url: 'https://worksphere.com/services'
+    title: category ? `${category} Services — Hire Verified Professionals | WorkSphere` : 'Home Services Platform — Book Trusted Professionals | WorkSphere',
+    description: `Book trusted ${category || 'home services'} professionals on WorkSphere. Verified experts, instant booking, secure payments. India's leading workforce platform for 20+ service categories.`,
+    keywords: `${category || 'home services platform'}, workforce platform India, hire workers online, ${category ? category.toLowerCase() + ' services' : 'plumber, electrician, carpenter'}, WorkSphere services`,
+    type: 'service',
+    url: `https://wsphere.me/services${category ? '?category=' + encodeURIComponent(category) : ''}`
   })
 
   const filteredServices = useMemo(() => {

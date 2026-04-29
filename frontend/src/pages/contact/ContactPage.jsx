@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import useSEO from '../../hooks/useSEO'
 import { motion } from 'framer-motion'
 import {
   EnvelopeIcon, PhoneIcon, MapPinIcon, ClockIcon,
@@ -16,6 +17,13 @@ const contactInfo = [
 const fadeUp = { hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0 } }
 
 export default function ContactPage() {
+  useSEO({
+    title: 'Contact WorkSphere — Get Support & Help',
+    description: 'Contact the WorkSphere team for support, feedback, or partnerships. Reach us via email, phone, or our contact form. We respond within 24 hours.',
+    keywords: 'contact WorkSphere, support, help, workforce platform India, customer service',
+    url: 'https://wsphere.me/contact'
+  })
+
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
   const [submitted, setSubmitted] = useState(false)
   const [sending, setSending] = useState(false)

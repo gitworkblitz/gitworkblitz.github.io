@@ -61,10 +61,10 @@ export default function GigsPage() {
   const [visibleCount, setVisibleCount] = useState(12)
 
   useSEO({
-    title: 'Freelance Gigs | WorkSphere',
-    description: 'Find freelance gigs and short-term projects across India. Work remotely and build your career on WorkSphere.',
-    keywords: 'freelance, gigs, remote work, freelance jobs india, worksphere gigs',
-    url: 'https://worksphere.com/gigs'
+    title: 'Freelance Gig Marketplace — Find & Post Gigs | WorkSphere',
+    description: 'Find freelance gigs and short-term projects on WorkSphere. India\'s leading gig marketplace for web dev, design, marketing & more. Post or apply to gigs instantly.',
+    keywords: 'gig marketplace, freelance gigs India, freelance jobs, remote gigs, hire freelancers, workforce platform India, WorkSphere gigs',
+    url: 'https://wsphere.me/gigs'
   })
 
   const getDurationDays = (duration) => {

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react'
+import useSEO from '../../hooks/useSEO'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useDataCache } from '../../context/DataCacheContext'
 import { SERVICE_CATEGORIES, calculateWorkerScore, formatCurrencyINR } from '../../utils/dummyData'
@@ -18,6 +19,13 @@ export default function FindWorkersPage() {
   const [searchTerm, setSearchTerm] = useState(searchParams.get('category') || '')
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '')
   const [sortBy, setSortBy] = useState('score')
+
+  useSEO({
+    title: 'Find Workers — Hire Verified Professionals Near You | WorkSphere',
+    description: 'Browse and hire verified professionals on WorkSphere. Smart AI matching, transparent ratings, and instant booking. Find plumbers, electricians, designers & more.',
+    keywords: 'find workers, hire professionals, verified workers India, home services platform, hire workers online, plumber near me, electrician Delhi NCR, WorkSphere',
+    url: 'https://wsphere.me/find-workers'
+  })
 
   const filteredWorkers = useMemo(() => {
     let result = [...workers]

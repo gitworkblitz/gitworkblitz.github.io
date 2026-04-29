@@ -69,10 +69,11 @@ export default function JobsPage() {
   const [visibleCount, setVisibleCount] = useState(12)
 
   useSEO({
-    title: 'Jobs — Find Your Dream Job | WorkSphere',
-    description: 'Browse the latest job openings on WorkSphere. Find full-time, part-time, and remote jobs across India.',
-    keywords: 'jobs, hiring, careers, worksphere jobs, local jobs',
-    url: 'https://worksphere.com/jobs'
+    title: 'Jobs Platform — Find Your Dream Job in India | WorkSphere',
+    description: 'Browse the latest job openings on WorkSphere. Find full-time, part-time, remote & freelance jobs across India. Apply instantly with our smart jobs platform.',
+    keywords: 'jobs platform, find jobs India, remote jobs, full-time jobs, part-time jobs, hire workers online, workforce platform India, WorkSphere jobs',
+    type: 'jobPosting',
+    url: 'https://wsphere.me/jobs'
   })
 
   const filtered = useMemo(() => {

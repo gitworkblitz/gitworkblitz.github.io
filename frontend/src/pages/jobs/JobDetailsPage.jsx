@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import useSEO from '../../hooks/useSEO'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useDataCache } from '../../context/DataCacheContext'
@@ -150,6 +151,27 @@ export default function JobDetailsPage() {
 
   if (loading) return <DetailSkeleton />
   if (!job) return null
+
+  // Dynamic SEO for this specific job
+  useSEO({
+    title: `${job.title} at ${job.company} — ${job.location} | WorkSphere`,
+    description: `Apply for ${job.title} at ${job.company}. ${(job.employment_type || '').replace(/_/g, ' ')} role in ${job.location}. Salary: ${formatSalaryRange(job.salary_min || 0, job.salary_max || 0)}. Apply on WorkSphere jobs platform.`,
+    keywords: `${job.title}, ${job.company} jobs, ${job.location} jobs, jobs platform, hire workers online, WorkSphere`,
+    type: 'jobPosting',
+    url: `https://wsphere.me/jobs/${id}`,
+    schemaData: {
+      "@context": "https://schema.org",
+      "@type": "JobPosting",
+      "title": job.title,
+      "description": job.description || '',
+      "hiringOrganization": { "@type": "Organization", "name": job.company, "sameAs": "https://wsphere.me" },
+      "jobLocation": { "@type": "Place", "address": { "@type": "PostalAddress", "addressLocality": job.location, "addressCountry": "IN" } },
+      "employmentType": (job.employment_type || 'FULL_TIME').toUpperCase(),
+      "baseSalary": { "@type": "MonetaryAmount", "currency": "INR", "value": { "@type": "QuantitativeValue", "minValue": job.salary_min || 0, "maxValue": job.salary_max || 0, "unitText": "YEAR" } },
+      "datePosted": job.createdAt || new Date().toISOString(),
+      "url": `https://wsphere.me/jobs/${id}`
+    }
+  })
 
   const isEmployer = user && (job.employer_id === user.uid || userProfile?.user_type === 'employer')
 

@@ -1,4 +1,5 @@
 import React from 'react'
+import useSEO from '../../hooks/useSEO'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
@@ -23,6 +24,13 @@ const team = [
 ]
 
 export default function AboutPage() {
+  useSEO({
+    title: 'About WorkSphere — India\'s Leading Workforce Platform',
+    description: 'Learn about WorkSphere, India\'s trusted workforce platform connecting professionals with customers. Our mission, vision, team, and core values.',
+    keywords: 'about WorkSphere, workforce platform India, home services platform, hire workers online, Delhi NCR services',
+    url: 'https://wsphere.me/about'
+  })
+
   return (
     <div className="min-h-screen">
       {/* Hero */}

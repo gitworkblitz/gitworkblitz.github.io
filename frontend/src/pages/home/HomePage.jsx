@@ -68,9 +68,10 @@ export default function HomePage() {
   }, [])
 
   useSEO({
-    title: `${platformName} — Smart Workforce Platform for Urban India`,
-    description: `${platformName} is the smartest way to find local services, hire professionals, and discover freelance jobs across India.`,
-    keywords: `services, jobs, gigs, freelance, hiring, electricians, plumbers, developers, ${platformName.toLowerCase()}`
+    title: `${platformName} | Services, Jobs & Gigs Platform in India`,
+    description: `${platformName} is India's leading workforce platform. Book home services, find jobs, post freelance gigs, and hire verified professionals across 20+ categories.`,
+    keywords: 'workforce platform India, home services platform, jobs platform, gig marketplace, hire workers online, freelance gigs India, WorkSphere, plumber, electrician, AC repair, Delhi NCR',
+    url: 'https://wsphere.me/'
   })
 
   return (

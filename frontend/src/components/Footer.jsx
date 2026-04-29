@@ -14,6 +14,7 @@ const platformLinks = [
 const companyLinks = [
   ['About Us', '/about'],
   ['Contact', '/contact'],
+  ['Blog & Articles', '/blog'],
   ['Privacy Policy', '/privacy'],
   ['Terms of Service', '/terms'],
 ]
@@ -21,9 +22,16 @@ const companyLinks = [
 const supportLinks = [
   ['Help Center', '/help'],
   ['FAQ', '/faq'],
-  ['Blog & Articles', '/blog'],
   ['Report Issue', '/report-issue'],
   ['Feedback', '/feedback'],
+]
+
+const popularServices = [
+  ['Plumber', '/services?category=Plumber'],
+  ['Electrician', '/services?category=Electrician'],
+  ['Carpenter', '/services?category=Carpenter'],
+  ['AC Repair', '/services?category=AC+Repair'],
+  ['Painter', '/services?category=Painter'],
 ]
 
 export default function Footer() {
@@ -37,7 +45,7 @@ export default function Footer() {
       <div className="h-1 bg-gradient-to-r from-primary-600 via-violet-500 to-primary-600" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-10">
           {/* Brand */}
           <div className="lg:col-span-2">
             <div className="flex items-center gap-2.5 mb-4">
@@ -47,7 +55,7 @@ export default function Footer() {
               <span className="text-white font-bold text-2xl">{platformName}</span>
             </div>
             <p className="text-sm text-gray-400 leading-relaxed mb-5 max-w-sm">
-              Your all-in-one platform for services, jobs, and gigs. Connecting professionals with opportunities across Delhi NCR.
+              India's leading workforce platform for home services, jobs, and freelance gigs. Connecting verified professionals with opportunities across Delhi NCR.
             </p>
             <div className="space-y-2 text-sm text-gray-400">
               <div className="flex items-center gap-2">
@@ -83,6 +91,16 @@ export default function Footer() {
             <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Platform</h4>
             <ul className="space-y-2.5">
               {platformLinks.map(([label, to]) => (
+                <li key={to}><Link to={to} className="text-sm hover:text-white transition-colors hover:translate-x-1 inline-block">{label}</Link></li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Popular Services — SEO keyword-rich internal links */}
+          <div>
+            <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Popular Services</h4>
+            <ul className="space-y-2.5">
+              {popularServices.map(([label, to]) => (
                 <li key={to}><Link to={to} className="text-sm hover:text-white transition-colors hover:translate-x-1 inline-block">{label}</Link></li>
               ))}
             </ul>

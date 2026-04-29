@@ -5,10 +5,18 @@ import viteCompression from 'vite-plugin-compression'
 export default defineConfig({
   plugins: [
     react(),
+    // Gzip compression
     viteCompression({
       algorithm: 'gzip',
       ext: '.gz',
-      threshold: 10240, // only compress files > 10kb
+      threshold: 1024, // compress files > 1kb (was 10kb — more aggressive)
+      deleteOriginFile: false
+    }),
+    // Brotli compression (smaller than gzip, supported by all modern browsers)
+    viteCompression({
+      algorithm: 'brotliCompress',
+      ext: '.br',
+      threshold: 1024,
       deleteOriginFile: false
     })
   ],
@@ -21,6 +29,12 @@ export default defineConfig({
     // Increase chunk warning threshold (vendor libs are intentionally large)
     chunkSizeWarningLimit: 1000,
     minify: 'esbuild',
+    // CSS optimization
+    cssMinify: true,
+    // Enable CSS code splitting for smaller initial bundles
+    cssCodeSplit: true,
+    // Reduce asset inline limit to prevent large base64 strings in JS
+    assetsInlineLimit: 2048,
     rollupOptions: {
       output: {
         entryFileNames: 'assets/[name]-[hash].js',
@@ -39,6 +53,8 @@ export default defineConfig({
           icons: ['@heroicons/react', 'lucide-react'],
           // PDF generation — only loaded on invoice pages
           pdf: ['html2pdf.js'],
+          // Query client — used across the app
+          query: ['@tanstack/react-query'],
         }
       }
     }

@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import useSEO from '../../hooks/useSEO'
 import { Link } from 'react-router-dom'
 import { ChevronDownIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline'
 
@@ -60,6 +61,19 @@ function FAQItem({ q, a }) {
 
 export default function FAQPage() {
   const [activeCategory, setActiveCategory] = useState('General')
+
+  // Collect all FAQ items for schema
+  const allFaqItems = faqCategories.flatMap(cat =>
+    cat.faqs.map(faq => ({ question: faq.q, answer: faq.a }))
+  )
+
+  useSEO({
+    title: 'FAQ — Frequently Asked Questions | WorkSphere',
+    description: 'Find answers to common questions about WorkSphere. Learn about bookings, payments, services, jobs, gigs, and how our workforce platform works across India.',
+    keywords: 'WorkSphere FAQ, frequently asked questions, home services help, jobs platform FAQ, gig marketplace support, workforce platform India',
+    url: 'https://wsphere.me/faq',
+    faqData: allFaqItems
+  })
 
   return (
     <div className="min-h-screen">

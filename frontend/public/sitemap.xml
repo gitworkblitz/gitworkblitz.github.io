@@ -1,92 +1,108 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Homepage -->
   <url>
-    <loc>https://worksphere.me/</loc>
+    <loc>https://wsphere.me/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
+
+  <!-- Core Platform Pages -->
   <url>
-    <loc>https://worksphere.me/services</loc>
+    <loc>https://wsphere.me/services</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://worksphere.me/jobs</loc>
+    <loc>https://wsphere.me/jobs</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://worksphere.me/gigs</loc>
+    <loc>https://wsphere.me/gigs</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://worksphere.me/find-workers</loc>
+    <loc>https://wsphere.me/find-workers</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
+
+  <!-- Blog Pages -->
   <url>
-    <loc>https://worksphere.me/blog</loc>
+    <loc>https://wsphere.me/blog</loc>
     <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://wsphere.me/blog/hire-best-service-providers</loc>
+    <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://worksphere.me/blog/hire-best-service-providers</loc>
+    <loc>https://wsphere.me/blog/complete-guide-freelancing-india-2026</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://wsphere.me/blog/boost-worker-profile-visibility</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://wsphere.me/blog/understanding-payments-invoices</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://wsphere.me/blog/remote-work-trends</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://wsphere.me/blog/top-in-demand-skills</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Company Pages -->
+  <url>
+    <loc>https://wsphere.me/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://worksphere.me/blog/complete-guide-freelancing-india-2026</loc>
+    <loc>https://wsphere.me/contact</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Support Pages -->
+  <url>
+    <loc>https://wsphere.me/faq</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://worksphere.me/blog/boost-worker-profile-visibility</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://worksphere.me/blog/understanding-payments-invoices</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://worksphere.me/blog/remote-work-trends</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://worksphere.me/blog/top-in-demand-skills</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://worksphere.me/about</loc>
+    <loc>https://wsphere.me/help</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://worksphere.me/contact</loc>
+    <loc>https://wsphere.me/feedback</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.4</priority>
   </url>
+
+  <!-- Legal Pages -->
   <url>
-    <loc>https://worksphere.me/help</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://worksphere.me/faq</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://worksphere.me/privacy</loc>
+    <loc>https://wsphere.me/privacy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://worksphere.me/terms</loc>
+    <loc>https://wsphere.me/terms</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>

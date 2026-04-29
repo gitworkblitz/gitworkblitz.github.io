@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import useSEO from '../../hooks/useSEO'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getServiceById, createBooking, getServiceReviews } from '../../services/firestoreService'
@@ -142,6 +143,27 @@ export default function ServiceDetailPage() {
       </div>
     )
   }
+
+  // Dynamic SEO for this specific service
+  const slugTitle = (service.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+  useSEO({
+    title: `${service.title} — ${service.category || 'Professional Service'} | WorkSphere`,
+    description: `Book ${service.title} on WorkSphere. ${service.description?.slice(0, 100) || 'Verified professionals, instant booking, secure payments.'}`,
+    keywords: `${service.category || 'services'}, ${service.title}, hire workers online, home services platform, WorkSphere`,
+    type: 'service',
+    url: `https://wsphere.me/services/${id}`,
+    schemaData: {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": service.title,
+      "description": service.description || '',
+      "provider": { "@type": "Person", "name": service.worker_name || 'WorkSphere Professional' },
+      "areaServed": { "@type": "Place", "name": service.location || 'Delhi NCR, India' },
+      "offers": { "@type": "Offer", "price": String(service.price || 0), "priceCurrency": "INR" },
+      "aggregateRating": service.rating ? { "@type": "AggregateRating", "ratingValue": String(service.rating), "reviewCount": String(service.total_reviews || 1) } : undefined,
+      "url": `https://wsphere.me/services/${id}`
+    }
+  })
 
   const today = new Date().toISOString().split('T')[0]
 

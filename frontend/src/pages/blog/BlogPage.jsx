@@ -153,11 +153,42 @@ export default function BlogPage() {
     [category]
   )
 
+  // Determine FAQ data from article if it has list-type content
+  const currentArticle = slug ? ARTICLES.find(a => a.slug === slug) : null
+  const faqItems = currentArticle?.content
+    ?.filter(b => b.type === 'heading')
+    .map((heading, idx) => {
+      const nextBlock = currentArticle.content[currentArticle.content.indexOf(heading) + 1]
+      return nextBlock?.type === 'paragraph' ? { question: heading.text, answer: nextBlock.text } : null
+    })
+    .filter(Boolean) || []
+
   useSEO({
-    title: slug ? `${ARTICLES.find(a => a.slug === slug)?.title || 'Blog'} | WorkSphere` : 'Blog - Insights & Resources | WorkSphere',
-    description: slug ? ARTICLES.find(a => a.slug === slug)?.excerpt : 'Expert tips, industry trends, and actionable guides to help you grow on WorkSphere.',
-    keywords: 'blog, worksphere, freelance tips, hiring guide',
-    type: slug ? 'article' : 'website'
+    title: slug
+      ? `${currentArticle?.title || 'Blog'} | WorkSphere`
+      : 'Blog — Insights, Tips & Guides for Workforce Platform | WorkSphere',
+    description: slug
+      ? (currentArticle?.excerpt || 'Expert insights and guides on WorkSphere.')
+      : 'Expert tips, industry trends, and actionable guides for hiring professionals, finding freelance gigs, and growing your career on India\'s leading workforce platform.',
+    keywords: slug
+      ? `${currentArticle?.category || 'blog'}, worksphere blog, ${currentArticle?.title?.toLowerCase() || ''}, freelance gigs India, workforce platform India`
+      : 'blog, worksphere, freelance tips, hiring guide, home services platform, gig marketplace, workforce platform India',
+    type: slug ? 'article' : 'website',
+    url: slug ? `https://wsphere.me/blog/${slug}` : 'https://wsphere.me/blog',
+    schemaData: slug && currentArticle ? {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": currentArticle.title,
+      "description": currentArticle.excerpt,
+      "author": { "@type": "Person", "name": currentArticle.author },
+      "publisher": { "@type": "Organization", "name": "WorkSphere", "logo": { "@type": "ImageObject", "url": "https://wsphere.me/logo.png" } },
+      "datePublished": currentArticle.date ? new Date(currentArticle.date + ' 2026').toISOString() : undefined,
+      "dateModified": currentArticle.date ? new Date(currentArticle.date + ' 2026').toISOString() : undefined,
+      "mainEntityOfPage": { "@type": "WebPage", "@id": `https://wsphere.me/blog/${slug}` },
+      "articleSection": currentArticle.category,
+      "wordCount": currentArticle.content?.reduce((acc, b) => acc + (b.text || b.items?.join(' ') || '').split(' ').length, 0) || 0
+    } : undefined,
+    faqData: slug ? faqItems : undefined
   })
 
   // ─── Article Detail View ─────────────────────────────────────
@@ -243,7 +274,7 @@ export default function BlogPage() {
           </div>
 
           {/* Related Articles */}
-          {relatedArticles.length > 0 && (
+           {relatedArticles.length > 0 && (
             <div className="mt-10">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-5">Related Articles</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -259,6 +290,34 @@ export default function BlogPage() {
               </div>
             </div>
           )}
+
+          {/* Internal Linking — SEO: Cross-link blog to main platform sections */}
+          <div className="mt-10 bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100 dark:border-gray-800 p-6">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Explore WorkSphere</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Link to="/services" className="group flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/50 hover:shadow-md transition-all">
+                <div className="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center text-white font-bold group-hover:scale-110 transition-transform">S</div>
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-white text-sm group-hover:text-blue-600 transition-colors">Browse Services</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Book home services & professionals</p>
+                </div>
+              </Link>
+              <Link to="/jobs" className="group flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800/50 hover:shadow-md transition-all">
+                <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center text-white font-bold group-hover:scale-110 transition-transform">J</div>
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-white text-sm group-hover:text-green-600 transition-colors">Find Jobs</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Explore latest job openings</p>
+                </div>
+              </Link>
+              <Link to="/gigs" className="group flex items-center gap-3 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-100 dark:border-purple-800/50 hover:shadow-md transition-all">
+                <div className="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center text-white font-bold group-hover:scale-110 transition-transform">G</div>
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-white text-sm group-hover:text-purple-600 transition-colors">Freelance Gigs</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Post or apply to gig projects</p>
+                </div>
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     )
