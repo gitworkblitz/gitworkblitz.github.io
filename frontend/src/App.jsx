@@ -16,8 +16,8 @@ import ProtectedRoute from './routes/ProtectedRoute'
 import ScrollToTop from './components/ScrollToTop'
 import { PageSkeleton } from './components/SkeletonLoader'
 
-import HomePage from './pages/home/HomePage'
-
+// HomePage is now lazy loaded
+// import HomePage from './pages/home/HomePage'
 // ─── Retry wrapper for dynamic imports (fixes production chunk errors) ───
 const lazyWithRetry = (componentImport) =>
   lazy(async () => {
@@ -39,6 +39,7 @@ const lazyWithRetry = (componentImport) =>
   })
 
 // ─── Secondary public pages: lazy loaded ────────────────────────────────────
+const HomePage          = lazyWithRetry(() => import('./pages/home/HomePage'))
 const LoginPage         = lazyWithRetry(() => import('./pages/auth/LoginPage'))
 const SignupPage        = lazyWithRetry(() => import('./pages/auth/SignupPage'))
 const JobsPage          = lazyWithRetry(() => import('./pages/jobs/JobsPage'))
@@ -116,12 +117,12 @@ function SuspenseWrap({ children }) {
 
 // Inner app handles dynamic settings routing
 function AppInner() {
-  const { settings, loading: settingsLoading } = useSettings()
+  const { settings } = useSettings()
   const { userProfile, loading: authLoading } = useAuth()
   const location = useLocation()
 
-  // Wait for auth to resolve before checking admin status
-  if (settingsLoading || authLoading) return <PageSkeleton />
+  // Removed global authLoading block to allow instant first paint.
+  // Navbar and ProtectedRoute components handle auth loading state independently.
 
   const isAdmin = userProfile?.user_type === 'admin'
   const isAuthRoute = location.pathname.startsWith('/login') || location.pathname.startsWith('/signup')

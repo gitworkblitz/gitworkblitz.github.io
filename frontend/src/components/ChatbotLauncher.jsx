@@ -2,8 +2,26 @@ import React, { useState, Suspense, lazy } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline'
 
-const Chatbot = lazy(() => import('./Chatbot'))
+// Helper to retry dynamic imports (fixes production chunk 404s)
+const lazyWithRetry = (componentImport) =>
+  lazy(async () => {
+    const pageHasAlreadyBeenForceRefreshed = JSON.parse(
+      window.sessionStorage.getItem('chatbot-chunk-refreshed') || 'false'
+    )
+    try {
+      const component = await componentImport()
+      window.sessionStorage.setItem('chatbot-chunk-refreshed', 'false')
+      return component
+    } catch (error) {
+      if (!pageHasAlreadyBeenForceRefreshed) {
+        window.sessionStorage.setItem('chatbot-chunk-refreshed', 'true')
+        window.location.reload()
+      }
+      throw error
+    }
+  })
 
+const Chatbot = lazyWithRetry(() => import('./Chatbot'))
 export default function ChatbotLauncher() {
   const [open, setOpen] = useState(false)
 

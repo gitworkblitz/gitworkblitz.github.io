@@ -53,11 +53,14 @@
     }
     </script>
 
-    <!-- Fonts -->
+    <!-- Fonts — display=swap prevents FOIT & preloading eliminates render-blocking -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    </noscript>
     <!-- Firebase & API Preconnect — eliminates DNS+TLS latency on first request -->
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
@@ -66,8 +69,7 @@
     <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com" />
     <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
 
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet CSS: loaded lazily by map components, NOT here (saves ~40KB blocking) -->
 
     <!-- GitHub Pages SPA redirect handler -->
     <script type="text/javascript">
@@ -85,15 +87,43 @@
   </head>
   <body>
     <div id="root">
-      <!-- Instant loading state before React hydrates -->
-      <div id="initial-loader" style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f9fafb;">
-        <div style="text-align:center;">
-          <div style="width:40px;height:40px;border:3px solid #e5e7eb;border-top-color:#2563eb;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px;"></div>
-          <p style="color:#6b7280;font-family:Inter,system-ui,sans-serif;font-size:14px;font-weight:500;">Loading WorkSphere...</p>
+      <!-- Branded skeleton loader — shown instantly before React hydrates -->
+      <div id="initial-loader" style="min-height:100vh;background:#f9fafb;font-family:Inter,system-ui,sans-serif;">
+        <!-- Navbar skeleton -->
+        <div style="height:64px;background:#fff;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;padding:0 24px;gap:12px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#1d4ed8);"></div>
+          <div style="width:110px;height:18px;background:#e5e7eb;border-radius:8px;"></div>
+          <div style="flex:1;"></div>
+          <div style="width:80px;height:14px;background:#e5e7eb;border-radius:6px;"></div>
+          <div style="width:80px;height:14px;background:#e5e7eb;border-radius:6px;margin-left:8px;"></div>
+        </div>
+        <!-- Hero skeleton -->
+        <div style="background:linear-gradient(135deg,#0f172a,#1e3a8a,#1d4ed8);padding:80px 24px;text-align:center;">
+          <div style="width:260px;height:16px;background:rgba(255,255,255,0.1);border-radius:20px;margin:0 auto 24px;"></div>
+          <div style="width:420px;max-width:90%;height:40px;background:rgba(255,255,255,0.12);border-radius:12px;margin:0 auto 16px;"></div>
+          <div style="width:320px;max-width:80%;height:20px;background:rgba(255,255,255,0.08);border-radius:8px;margin:0 auto 32px;"></div>
+          <div style="display:flex;gap:16px;justify-content:center;">
+            <div style="width:140px;height:48px;background:rgba(255,255,255,0.9);border-radius:12px;"></div>
+            <div style="width:140px;height:48px;background:rgba(255,255,255,0.15);border-radius:12px;"></div>
+          </div>
+        </div>
+        <!-- Content skeleton -->
+        <div style="max-width:1200px;margin:40px auto;padding:0 24px;">
+          <div style="width:200px;height:24px;background:#e5e7eb;border-radius:8px;margin-bottom:24px;"></div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+            <div style="height:80px;background:#fff;border-radius:12px;border:1px solid #f3f4f6;"></div>
+            <div style="height:80px;background:#fff;border-radius:12px;border:1px solid #f3f4f6;"></div>
+            <div style="height:80px;background:#fff;border-radius:12px;border:1px solid #f3f4f6;"></div>
+            <div style="height:80px;background:#fff;border-radius:12px;border:1px solid #f3f4f6;"></div>
+            <div style="height:80px;background:#fff;border-radius:12px;border:1px solid #f3f4f6;"></div>
+          </div>
         </div>
       </div>
-      <style>#initial-loader{transition:opacity .3s}@keyframes spin{to{transform:rotate(360deg)}}</style>
-      <script>window.addEventListener('DOMContentLoaded',()=>{setTimeout(()=>{const l=document.getElementById('initial-loader');if(l){l.style.opacity='0';setTimeout(()=>l.remove(),300)}},100)})</script>
+      <style>
+        #initial-loader{transition:opacity .3s ease}
+        @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+        #initial-loader div[style*="background:#e5e7eb"]{background:linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%)!important;background-size:200% 100%!important;animation:shimmer 1.5s infinite!important}
+      </style>
     </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

@@ -241,6 +241,9 @@ export default function DashboardPage() {
       let recentInvoicesData = []
       let recentAppsData = []
 
+      // FIX: declare rolePromises array (was missing — caused runtime crash)
+      const rolePromises = []
+
       if (isWorker) {
         rolePromises.push(
           getQueryCount('services', 'worker_id', '==', user.uid)
@@ -403,9 +406,37 @@ export default function DashboardPage() {
     return 'Good Evening'
   }, [])
 
+  const greetingEmoji = useMemo(() => {
+    const hour = new Date().getHours()
+    if (hour < 12) return '☀️'
+    if (hour < 18) return '🌤️'
+    return '🌙'
+  }, [])
+
   const userName = useMemo(() => {
     return (userProfile?.name || 'User').split(' ')[0]
   }, [userProfile?.name])
+
+  const currentDateTime = useMemo(() => {
+    const now = new Date()
+    const dateStr = now.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+    return { dateStr, timeStr }
+  }, [])
+
+  const motivationalMessage = useMemo(() => {
+    const messages = [
+      "Let's make today productive! 🚀",
+      "Great things are built one step at a time 💪",
+      "Your dedication drives success ✨",
+      "Stay focused, stay ahead 🎯",
+      "Every task completed is progress made 📈",
+      "You're doing amazing work! 🌟",
+      "Small wins lead to big victories 🏆",
+    ]
+    const dayIndex = new Date().getDay()
+    return messages[dayIndex % messages.length]
+  }, [])
 
   const statCards = useMemo(() => {
     const cards = []
@@ -646,27 +677,38 @@ export default function DashboardPage() {
       variants={containerVariants}
       className="max-w-6xl mx-auto px-4 sm:px-6 py-8"
     >
-      {/* Header */}
+      {/* Header — Personalized */}
       <motion.div variants={sectionVariants} className="mb-8">
-        <div className="flex items-center gap-3 mb-1">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {greeting}, <span className="gradient-text">{userName}</span>
-          </h1>
-          {userProfile?.user_type && (
-            <motion.span
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2, type: 'spring', stiffness: 500 }}
-              className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 capitalize"
-            >
-              <CheckBadgeIcon className="w-3.5 h-3.5" />
-              {userProfile.user_type}
-            </motion.span>
-          )}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {greeting}, <span className="gradient-text">{userName}</span> {greetingEmoji}
+              </h1>
+              {userProfile?.user_type && (
+                <motion.span
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.2, type: 'spring', stiffness: 500 }}
+                  className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 capitalize"
+                >
+                  <CheckBadgeIcon className="w-3.5 h-3.5" />
+                  {userProfile.user_type}
+                </motion.span>
+              )}
+            </div>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">
+              Welcome back to {platformName} — {motivationalMessage}
+            </p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-1.5 justify-end">
+              <ClockIcon className="w-4 h-4 text-primary-500" />
+              {currentDateTime.timeStr}
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">{currentDateTime.dateStr}</p>
+          </div>
         </div>
-        <p className="text-gray-500 dark:text-gray-400 text-sm">
-          Here's your {platformName} overview for today
-        </p>
       </motion.div>
 
       {/* Profile Completion */}

@@ -373,3 +373,130 @@ export function ProfileSkeleton() {
     </div>
   )
 }
+
+export function BlogSkeleton() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="text-center mb-10">
+        <Shimmer className="h-8 w-64 mx-auto mb-3" />
+        <Shimmer className="h-4 w-96 mx-auto max-w-full" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="bg-white dark:bg-gray-900 rounded-2xl shadow-card border border-gray-100 dark:border-gray-800 overflow-hidden">
+            <Shimmer className="h-48 rounded-none" />
+            <div className="p-5 space-y-3">
+              <Shimmer className="h-4 w-20 rounded-full" />
+              <Shimmer className="h-5 w-3/4" />
+              <Shimmer className="h-4 w-full" />
+              <Shimmer className="h-4 w-2/3" />
+              <div className="flex items-center gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                <Shimmer className="w-8 h-8 rounded-full" />
+                <Shimmer className="h-3 w-24" />
+                <div className="flex-1" />
+                <Shimmer className="h-3 w-16" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export function PaymentsSkeleton() {
+  return (
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+      <div className="flex items-center justify-between mb-6">
+        <div className="space-y-2">
+          <Shimmer className="h-7 w-40" />
+          <Shimmer className="h-4 w-28" />
+        </div>
+        <Shimmer className="h-10 w-28 rounded-xl" />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-5">
+            <Shimmer className="w-10 h-10 rounded-lg mb-3" />
+            <Shimmer className="h-7 w-20 mb-2" />
+            <Shimmer className="h-3 w-24" />
+          </div>
+        ))}
+      </div>
+      <div className="space-y-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-5 flex items-center gap-4">
+            <Shimmer className="w-10 h-10 rounded-full flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+              <Shimmer className="h-4 w-1/3" />
+              <Shimmer className="h-3 w-1/4" />
+            </div>
+            <Shimmer className="h-6 w-20 rounded-full" />
+            <Shimmer className="h-5 w-16" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export function InvoicesSkeleton() {
+  return (
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+      <div className="flex items-center justify-between mb-6">
+        <div className="space-y-2">
+          <Shimmer className="h-7 w-36" />
+          <Shimmer className="h-4 w-24" />
+        </div>
+      </div>
+      <div className="space-y-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="bg-white dark:bg-gray-900 rounded-xl shadow-card border border-gray-100 dark:border-gray-800 p-5 flex items-center gap-4">
+            <Shimmer className="w-10 h-10 rounded-lg flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+              <Shimmer className="h-4 w-32" />
+              <Shimmer className="h-3 w-48" />
+            </div>
+            <div className="text-right space-y-2">
+              <Shimmer className="h-5 w-20" />
+              <Shimmer className="h-3 w-16" />
+            </div>
+            <Shimmer className="h-9 w-24 rounded-lg" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export function HomeSkeleton() {
+  return (
+    <div className="min-h-screen">
+      {/* Hero */}
+      <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-blue-800 py-20 lg:py-32">
+        <div className="max-w-4xl mx-auto text-center px-4">
+          <Shimmer className="h-5 w-64 mx-auto mb-8 rounded-full opacity-20" />
+          <Shimmer className="h-12 w-96 mx-auto mb-4 max-w-full opacity-15" />
+          <Shimmer className="h-8 w-72 mx-auto mb-6 max-w-full opacity-10" />
+          <Shimmer className="h-5 w-80 mx-auto mb-10 max-w-full opacity-10" />
+          <div className="flex gap-4 justify-center">
+            <Shimmer className="h-14 w-40 rounded-xl opacity-30" />
+            <Shimmer className="h-14 w-40 rounded-xl opacity-15" />
+          </div>
+        </div>
+      </div>
+      {/* Categories */}
+      <div className="max-w-7xl mx-auto px-4 py-16">
+        <Shimmer className="h-8 w-56 mx-auto mb-10" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-100 dark:border-gray-800 flex flex-col items-center gap-2.5">
+              <Shimmer className="w-14 h-14 rounded-2xl" />
+              <Shimmer className="h-3 w-16" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
