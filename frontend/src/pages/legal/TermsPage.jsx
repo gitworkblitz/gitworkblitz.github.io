@@ -1,6 +1,8 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { DocumentTextIcon } from '@heroicons/react/24/outline'
+import SEO from '../../components/SEO'
+import { getPageSEO } from '../../data/seoData'
 
 const sections = [
   {
@@ -101,6 +103,7 @@ Users may contact our dispute resolution team at disputes@worksphere.in.`
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEO {...getPageSEO('terms')} />
       <section className="bg-gradient-to-br from-primary-700 to-primary-800 text-white py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur rounded-full px-4 py-2 text-sm font-medium text-primary-100 mb-4">

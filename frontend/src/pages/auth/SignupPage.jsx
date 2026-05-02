@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useSettings } from '../../context/SettingsContext'
 import { EnvelopeIcon, LockClosedIcon, UserIcon, PhoneIcon, MapPinIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
+import SEO from '../../components/SEO'
+import { getPageSEO } from '../../data/seoData'
 
 import { ShoppingBagIcon, WrenchScrewdriverIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline'
 
@@ -63,6 +65,7 @@ export default function SignupPage() {
 
   return (
     <div className="h-screen flex overflow-hidden">
+      <SEO {...getPageSEO('signup')} />
       {/* Left Panel */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-700 via-primary-600 to-primary-800 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">

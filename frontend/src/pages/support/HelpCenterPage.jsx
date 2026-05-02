@@ -6,6 +6,8 @@ import {
   WrenchScrewdriverIcon, ShieldCheckIcon, QuestionMarkCircleIcon,
   CalendarIcon, ChatBubbleLeftRightIcon, ArrowRightIcon
 } from '@heroicons/react/24/outline'
+import SEO from '../../components/SEO'
+import { getPageSEO } from '../../data/seoData'
 
 const categories = [
   { icon: UserGroupIcon, title: 'Account & Profile', desc: 'Manage your account settings, password, and profile information', articles: 12, color: 'bg-blue-50 text-blue-600' },
@@ -36,6 +38,7 @@ export default function HelpCenterPage() {
 
   return (
     <div className="min-h-screen">
+      <SEO {...getPageSEO('help')} />
       {/* Hero */}
       <section className="relative bg-gradient-to-br from-primary-700 via-primary-600 to-primary-800 text-white py-20 overflow-hidden">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">

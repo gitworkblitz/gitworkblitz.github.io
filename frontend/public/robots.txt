@@ -1,8 +1,30 @@
-# https://www.robotstxt.org/robotstxt.html
+# ─────────────────────────────────────────────────────────────────────────────
+# WorkSphere — robots.txt
+# https://wsphere.me
+# ─────────────────────────────────────────────────────────────────────────────
+
 User-agent: *
 Allow: /
 
-# Disallow admin and dashboard routes (auth-gated)
+# Public pages — explicitly allowed
+Allow: /services
+Allow: /services/
+Allow: /jobs
+Allow: /jobs/
+Allow: /gigs
+Allow: /gigs/
+Allow: /blog
+Allow: /blog/
+Allow: /find-workers
+Allow: /workers/
+Allow: /about
+Allow: /contact
+Allow: /faq
+Allow: /help
+Allow: /privacy
+Allow: /terms
+
+# Auth-gated and utility pages — disallowed
 Disallow: /admin/
 Disallow: /dashboard/
 Disallow: /profile
@@ -11,19 +33,16 @@ Disallow: /payments/
 Disallow: /invoices/
 Disallow: /login
 Disallow: /signup
+Disallow: /report-issue
+Disallow: /feedback
+Disallow: /services/create
+Disallow: /jobs/create
+Disallow: /gigs/create
 
-# Allow important public pages
-Allow: /services
-Allow: /jobs
-Allow: /gigs
-Allow: /blog
-Allow: /find-workers
-Allow: /about
-Allow: /contact
-Allow: /faq
-Allow: /help
+# Block static asset folders from indexing
+Disallow: /assets/
 
-# Sitemap
+# Sitemap location
 Sitemap: https://wsphere.me/sitemap.xml
 
 # Crawl-delay (be gentle on GitHub Pages)

@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useSettings } from '../../context/SettingsContext'
 import { EnvelopeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
+import SEO from '../../components/SEO'
+import { getPageSEO } from '../../data/seoData'
 
 export default function LoginPage() {
   const { login, getRedirectPath } = useAuth()
@@ -40,7 +42,7 @@ export default function LoginPage() {
 
   return (
     <div className="h-screen flex overflow-hidden">
-      {/* Left Panel - Branding */}
+      <SEO {...getPageSEO('login')} />
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-700 via-primary-600 to-primary-800 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl" />

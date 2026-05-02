@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ExclamationTriangleIcon, CheckCircleIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
+import SEO from '../../components/SEO'
+import { getPageSEO } from '../../data/seoData'
 
 const issueTypes = [
   'Bug / Technical Issue',
@@ -61,6 +63,7 @@ export default function ReportIssuePage() {
 
   return (
     <div className="min-h-screen">
+      <SEO {...getPageSEO('reportIssue')} />
       {/* Hero */}
       <section className="bg-gradient-to-br from-red-600 to-red-800 text-white py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">

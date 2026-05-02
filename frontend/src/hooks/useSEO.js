@@ -2,17 +2,22 @@ import { useEffect } from 'react'
 
 const SITE_URL = 'https://wsphere.me'
 const SITE_NAME = 'WorkSphere'
+const SITE_LOCALE = 'en_IN'
+const SITE_TWITTER = '@worksphere_in'
 const DEFAULT_DESCRIPTION = 'WorkSphere is India\'s leading workforce platform. Book home services, find jobs, post freelance gigs, and hire verified professionals across 20+ categories.'
 const DEFAULT_KEYWORDS = 'workforce platform India, home services platform, jobs platform, gig marketplace, hire workers online, freelance gigs India, WorkSphere'
 
 /**
  * useSEO - Production-grade SEO hook for WorkSphere
+ * Uses react-helmet-async under the hood via DOM manipulation
+ * (Helmet component approach is preferred — see components/SEO.jsx)
+ *
  * Supports: title, meta tags, Open Graph, Twitter Cards, canonical URL,
  *           and rich JSON-LD schema for website, article, service, job, and FAQ types.
  */
-export default function useSEO({ title, description, keywords, ogImage, url, type = 'website', schemaData, faqData }) {
+export default function useSEO({ title, description, keywords, ogImage, url, type = 'website', schemaData, faqData, noIndex }) {
   useEffect(() => {
-    // 1. Update Title — ensure proper format with pipe separator
+    // 1. Update Title
     const baseTitle = title || `${SITE_NAME} | Services, Jobs & Gigs Platform in India`
     const finalTitle = baseTitle.includes(SITE_NAME) ? baseTitle : `${baseTitle} | ${SITE_NAME}`
     document.title = finalTitle
@@ -30,25 +35,30 @@ export default function useSEO({ title, description, keywords, ogImage, url, typ
 
     const desc = description || DEFAULT_DESCRIPTION
     const kw = keywords || DEFAULT_KEYWORDS
+    const robotsContent = noIndex
+      ? 'noindex, nofollow'
+      : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1'
 
     // 3. Update Standard Meta Tags
     setMetaTag('name', 'description', desc)
     setMetaTag('name', 'keywords', kw)
-    setMetaTag('name', 'robots', 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1')
+    setMetaTag('name', 'robots', robotsContent)
 
     // 4. Update Open Graph Tags
+    const ogType = type === 'jobPosting' || type === 'service' || type === 'profile' ? 'website' : type
     setMetaTag('property', 'og:title', finalTitle)
     setMetaTag('property', 'og:description', desc)
-    setMetaTag('property', 'og:type', type === 'jobPosting' ? 'website' : type)
+    setMetaTag('property', 'og:type', ogType)
     setMetaTag('property', 'og:url', url || window.location.href)
     setMetaTag('property', 'og:site_name', SITE_NAME)
-    setMetaTag('property', 'og:locale', 'en_IN')
+    setMetaTag('property', 'og:locale', SITE_LOCALE)
     if (ogImage) {
       setMetaTag('property', 'og:image', ogImage)
     }
 
     // 5. Update Twitter Cards
     setMetaTag('name', 'twitter:card', 'summary_large_image')
+    setMetaTag('name', 'twitter:site', SITE_TWITTER)
     setMetaTag('name', 'twitter:title', finalTitle)
     setMetaTag('name', 'twitter:description', desc)
     if (ogImage) {
@@ -64,7 +74,7 @@ export default function useSEO({ title, description, keywords, ogImage, url, typ
     }
     canonical.setAttribute('href', url || window.location.href)
 
-    // 7. Schema Markup (JSON-LD) — supports custom schema or auto-generates
+    // 7. Schema Markup (JSON-LD)
     let schemaScript = document.getElementById('seo-schema')
     if (!schemaScript) {
       schemaScript = document.createElement('script')
@@ -75,7 +85,6 @@ export default function useSEO({ title, description, keywords, ogImage, url, typ
     
     let schema
     if (schemaData) {
-      // Use provided custom schema (e.g., Service, JobPosting)
       schema = schemaData
     } else if (type === 'article') {
       schema = {
@@ -85,7 +94,7 @@ export default function useSEO({ title, description, keywords, ogImage, url, typ
         "description": desc,
         "image": ogImage || `${SITE_URL}/og-image.jpg`,
         "author": { "@type": "Organization", "name": SITE_NAME },
-        "publisher": { "@type": "Organization", "name": SITE_NAME, "logo": { "@type": "ImageObject", "url": `${SITE_URL}/logo.png` } },
+        "publisher": { "@type": "Organization", "name": SITE_NAME, "logo": { "@type": "ImageObject", "url": `${SITE_URL}/favicon.svg` } },
         "mainEntityOfPage": { "@type": "WebPage", "@id": url || window.location.href }
       }
     } else if (type === 'service') {
@@ -123,7 +132,7 @@ export default function useSEO({ title, description, keywords, ogImage, url, typ
     }
     schemaScript.textContent = JSON.stringify(schema)
 
-    // 8. FAQ Schema (separate script to not conflict with main schema)
+    // 8. FAQ Schema
     let faqScript = document.getElementById('seo-faq-schema')
     if (faqData && faqData.length > 0) {
       if (!faqScript) {
@@ -148,11 +157,11 @@ export default function useSEO({ title, description, keywords, ogImage, url, typ
       faqScript.remove()
     }
 
-    // Cleanup — remove FAQ schema on unmount
+    // Cleanup
     return () => {
       const faq = document.getElementById('seo-faq-schema')
       if (faq) faq.remove()
     }
 
-  }, [title, description, keywords, ogImage, url, type, schemaData, faqData])
+  }, [title, description, keywords, ogImage, url, type, schemaData, faqData, noIndex])
 }
