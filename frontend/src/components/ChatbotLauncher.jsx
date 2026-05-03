@@ -34,7 +34,7 @@ export default function ChatbotLauncher() {
             animate={{ scale: 1, y: [0, -6, 0] }}
             exit={{ scale: 0 }}
             transition={{ y: { duration: 3, repeat: Infinity, ease: 'easeInOut' }, scale: { duration: 0.3 } }}
-            className="fixed bottom-6 right-6 z-40"
+            className="fixed bottom-24 md:bottom-6 right-5 md:right-6 z-40"
           >
             <button
               onClick={() => setOpen(true)}

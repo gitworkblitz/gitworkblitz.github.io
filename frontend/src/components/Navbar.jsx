@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
@@ -10,6 +10,7 @@ import {
   Menu as MenuIcon, X, UserCircle, LogOut,
   ShieldCheck, ChevronDown, LayoutGrid, Sun, Moon
 } from 'lucide-react'
+import { prefetchRoute } from '../utils/performanceUtils'
 
 const publicLinks = [
   { label: 'Services', to: '/services' },
@@ -18,7 +19,7 @@ const publicLinks = [
   { label: 'Gigs', to: '/gigs' },
 ]
 
-export default function Navbar() {
+export default React.memo(function Navbar() {
   const { user, userProfile, loading, logout } = useAuth()
   const { darkMode, toggleTheme } = useTheme()
   const { settings } = useSettings()
@@ -61,6 +62,8 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-1">
             {publicLinks.map(({ label, to }) => (
               <Link key={to} to={to}
+                onMouseEnter={() => prefetchRoute(to)}
+                onFocus={() => prefetchRoute(to)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                   isActive(to)
                     ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
@@ -223,4 +226,4 @@ export default function Navbar() {
       </Transition>
     </nav>
   )
-}
+})

@@ -34,7 +34,7 @@ const popularServices = [
   ['Painter', '/services?category=Painter'],
 ]
 
-export default function Footer() {
+export default React.memo(function Footer() {
   const { settings } = useSettings()
   const platformName = settings?.platformName || 'WorkSphere'
   const brandInitials = platformName.substring(0, 2).toUpperCase()
@@ -139,4 +139,4 @@ export default function Footer() {
       </div>
     </footer>
   )
-}
+})

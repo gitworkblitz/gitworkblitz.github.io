@@ -6,7 +6,21 @@
 
 @layer base {
   html { scroll-behavior: smooth; scroll-padding-top: 4.5rem; }
-  body { @apply bg-gray-50 text-gray-900 antialiased dark:bg-gray-950 dark:text-gray-100; font-family: 'Inter', system-ui, sans-serif; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased dark:bg-gray-950 dark:text-gray-100;
+    font-family: 'Inter', system-ui, sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
   * { box-sizing: border-box; }
 }
 
@@ -522,5 +536,185 @@ aside nav {
 @keyframes searchHintPulse {
   0%, 100% { opacity: 0.5; }
   50% { opacity: 0.8; }
+}
+
+/* ============================
+   MOBILE APP EXPERIENCE
+   ============================ */
+
+/* Bottom Navigation — premium glassmorphism */
+.mobile-bottom-nav {
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hide bottom nav when keyboard is open (viewport shrinks) */
+@media (max-height: 500px) and (max-width: 767px) {
+  .mobile-bottom-nav { display: none !important; }
+}
+
+/* Mobile touch feedback */
+@media (max-width: 767px) {
+  /* Tap highlight for interactive elements */
+  .card, [class*="rounded-xl"], [class*="rounded-2xl"] {
+    -webkit-tap-highlight-color: rgba(37, 99, 235, 0.08);
+  }
+
+  /* Active press states — native feel */
+  a:active, button:active, [role="button"]:active {
+    transform: scale(0.97);
+    transition: transform 0.1s ease;
+  }
+
+  /* Momentum scrolling */
+  main, .overflow-y-auto, .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+
+  /* Smooth card entrance on mobile */
+  .card {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  /* Mobile-optimized spacing */
+  .max-w-7xl { padding-left: 16px; padding-right: 16px; }
+  
+  /* Mobile section spacing reduction */
+  section { padding-top: 3rem; padding-bottom: 3rem; }
+  section:first-child { padding-top: 0; }
+
+  /* Mobile typography adjustments */
+  h1 { font-size: 1.75rem !important; line-height: 1.2 !important; }
+  h2 { font-size: 1.375rem !important; }
+
+  /* Cards: larger touch targets */
+  .stat-card { min-height: 120px; }
+  
+  /* Mobile form inputs: larger for thumb */
+  .input-field { min-height: 48px; font-size: 16px !important; }
+  
+  /* Prevent zoom on input focus (iOS) */
+  input, select, textarea { font-size: 16px !important; }
+}
+
+/* Page transition animations */
+@keyframes mobilePageIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mobilePageOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@media (max-width: 767px) {
+  main > * {
+    animation: mobilePageIn 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+/* Safe area support (iPhone notch + home indicator) */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .mobile-bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  @media (max-width: 767px) {
+    body {
+      padding-top: env(safe-area-inset-top);
+    }
+  }
+}
+
+/* PWA Standalone mode adjustments */
+@media (display-mode: standalone) {
+  /* Remove browser chrome space */
+  body {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  /* Slightly adjust top nav for standalone */
+  nav.sticky {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Mobile card hover → active state (no hover on touch) */
+@media (hover: none) and (pointer: coarse) {
+  .card:hover,
+  .card-hover-lift:hover,
+  .stat-card:hover,
+  .quick-action:hover {
+    transform: none !important;
+    box-shadow: inherit !important;
+  }
+  
+  /* Active press feedback instead */
+  .card:active,
+  .stat-card:active,
+  .quick-action:active {
+    transform: scale(0.98) !important;
+    transition: transform 0.1s ease !important;
+  }
+}
+
+/* Smooth pull-to-refresh prevention */
+html {
+  overscroll-behavior-y: none;
+}
+
+/* Mobile modal/overlay improvements */
+@media (max-width: 767px) {
+  [class*="backdrop-blur"] {
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+  
+  /* Full-width buttons on mobile */
+  .btn-primary, .btn-secondary, .btn-outline {
+    width: 100%;
+    justify-content: center;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+  
+  /* Mobile-optimized grid gaps */
+  .grid { gap: 0.75rem; }
+}
+
+/* Install prompt animations */
+@keyframes installSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Chatbot FAB position adjustment when bottom nav is present */
+@media (max-width: 767px) {
+  /* Push chatbot launcher above bottom nav */
+  [class*="ChatbotLauncher"] {
+    bottom: 5.5rem !important;
+  }
 }
 

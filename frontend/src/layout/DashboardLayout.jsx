@@ -316,7 +316,7 @@ export default function DashboardLayout() {
           </Link>
         </div>
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
           <Suspense fallback={<DashboardSkeleton />}>
             <Outlet />
           </Suspense>

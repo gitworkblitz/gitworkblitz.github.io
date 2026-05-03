@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react'
 import useSEO from '../../hooks/useSEO'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { prefetchRoute } from '../../utils/performanceUtils'
 import {
   WrenchScrewdriverIcon, BriefcaseIcon, CurrencyDollarIcon,
   CalendarIcon, ShieldCheckIcon, StarIcon, ClockIcon, UserGroupIcon,
@@ -71,7 +72,14 @@ export default function HomePage() {
     title: `${platformName} | Services, Jobs & Gigs Platform in India`,
     description: `${platformName} is India's leading workforce platform. Book home services, find jobs, post freelance gigs, and hire verified professionals across 20+ categories.`,
     keywords: 'workforce platform India, home services platform, jobs platform, gig marketplace, hire workers online, freelance gigs India, WorkSphere, plumber, electrician, AC repair, Delhi NCR',
-    url: 'https://wsphere.me/'
+    url: 'https://wsphere.me/',
+    faqData: [
+      { question: 'What is WorkSphere?', answer: 'WorkSphere is India\'s leading all-in-one workforce platform. Book home services like plumbers, electricians, and carpenters. Find full-time and remote jobs. Post or apply to freelance gigs. All in one platform.' },
+      { question: 'How do I book a home service on WorkSphere?', answer: 'Browse our services marketplace, select a verified professional, choose your preferred date and time slot, and click Book Now. You\'ll receive instant confirmation.' },
+      { question: 'Is WorkSphere free to use?', answer: 'Yes! Creating an account and browsing services, jobs, and gigs is completely free. We charge a small 10% platform fee only when a transaction is completed.' },
+      { question: 'What services are available on WorkSphere?', answer: 'WorkSphere offers 25+ service categories including Plumber, Electrician, Carpenter, AC Repair, Painter, Pest Control, Home Cleaning, Salon at Home, and many more across Delhi NCR.' },
+      { question: 'How does WorkSphere verify service providers?', answer: 'All service providers undergo ID verification, background checks, and skill assessments. Verified professionals receive a trusted badge on their profile.' },
+    ]
   })
 
   return (
@@ -103,11 +111,11 @@ export default function HomePage() {
             </motion.p>
 
             <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/services" className="group bg-white text-primary-700 font-semibold px-8 py-4 rounded-xl hover:bg-primary-50 transition-all shadow-lg shadow-black/20 flex items-center justify-center gap-2">
+              <Link to="/services" onMouseEnter={() => prefetchRoute('/services')} className="group bg-white text-primary-700 font-semibold px-8 py-4 rounded-xl hover:bg-primary-50 transition-all shadow-lg shadow-black/20 flex items-center justify-center gap-2">
                 Find Services
                 <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link to="/jobs" className="border-2 border-white/20 text-white font-semibold px-8 py-4 rounded-xl hover:bg-white/10 transition-all backdrop-blur-sm flex items-center justify-center">
+              <Link to="/jobs" onMouseEnter={() => prefetchRoute('/jobs')} className="border-2 border-white/20 text-white font-semibold px-8 py-4 rounded-xl hover:bg-white/10 transition-all backdrop-blur-sm flex items-center justify-center">
                 Browse Jobs
               </Link>
             </motion.div>

@@ -157,10 +157,53 @@ export default function useSEO({ title, description, keywords, ogImage, url, typ
       faqScript.remove()
     }
 
+    // 9. Breadcrumb Schema
+    let breadcrumbScript = document.getElementById('seo-breadcrumb-schema')
+    const pathParts = window.location.pathname.split('/').filter(p => p.length > 0)
+    
+    if (pathParts.length > 0 && !noIndex) {
+      if (!breadcrumbScript) {
+        breadcrumbScript = document.createElement('script')
+        breadcrumbScript.setAttribute('type', 'application/ld+json')
+        breadcrumbScript.setAttribute('id', 'seo-breadcrumb-schema')
+        document.head.appendChild(breadcrumbScript)
+      }
+      
+      const breadcrumbItems = [{
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": SITE_URL
+      }]
+      
+      let currentPath = ''
+      pathParts.forEach((part, index) => {
+        currentPath += `/${part}`
+        // Simple humanization of slug
+        const name = part.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+        breadcrumbItems.push({
+          "@type": "ListItem",
+          "position": index + 2,
+          "name": name,
+          "item": `${SITE_URL}${currentPath}`
+        })
+      })
+
+      breadcrumbScript.textContent = JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": breadcrumbItems
+      })
+    } else if (breadcrumbScript) {
+      breadcrumbScript.remove()
+    }
+
     // Cleanup
     return () => {
       const faq = document.getElementById('seo-faq-schema')
+      const breadcrumb = document.getElementById('seo-breadcrumb-schema')
       if (faq) faq.remove()
+      if (breadcrumb) breadcrumb.remove()
     }
 
   }, [title, description, keywords, ogImage, url, type, schemaData, faqData, noIndex])

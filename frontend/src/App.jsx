@@ -106,6 +106,10 @@ const ChatbotLauncher = lazyWithRetry(() => import('./components/ChatbotLauncher
 const NotFoundPage    = lazyWithRetry(() => import('./pages/NotFoundPage'))
 const MaintenancePage = lazyWithRetry(() => import('./pages/MaintenancePage'))
 
+// ─── Mobile App Experience ────────────────────────────────────────────────────
+const BottomNav       = lazyWithRetry(() => import('./components/BottomNav'))
+const InstallPrompt   = lazyWithRetry(() => import('./components/InstallPrompt'))
+
 const qc = new QueryClient({
   defaultOptions: {
     queries: { retry: 1, staleTime: 5 * 60 * 1000, gcTime: 10 * 60 * 1000 }
@@ -224,6 +228,8 @@ function AppInner() {
         </Routes>
 
       <SuspenseWrap><ChatbotLauncher /></SuspenseWrap>
+      <SuspenseWrap><BottomNav /></SuspenseWrap>
+      <SuspenseWrap><InstallPrompt /></SuspenseWrap>
     </>
   )
 }
