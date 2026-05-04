@@ -1,15 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import useSEO from '../../hooks/useSEO'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useDataCache } from '../../context/DataCacheContext'
 import { getGigById, applyToGig, hasUserAppliedToGig, completeGig } from '../../services/firestoreService'
 import { storage } from '../../services/firebase'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { dummyGigs, formatCurrencyINR } from '../../utils/dummyData'
-import { ClockIcon, MapPinIcon, ArrowLeftIcon, CalendarDaysIcon, IdentificationIcon, ShieldCheckIcon, DocumentTextIcon, PaperClipIcon } from '@heroicons/react/24/outline'
+import { ClockIcon, MapPinIcon, ArrowLeftIcon, CalendarDaysIcon, IdentificationIcon, ShieldCheckIcon, DocumentTextIcon, PaperClipIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import { StarIcon, CheckCircleIcon, ExclamationTriangleIcon, CurrencyRupeeIcon } from '@heroicons/react/24/solid'
 import toast from 'react-hot-toast'
 import { DetailSkeleton } from '../../components/SkeletonLoader'
+import GigCard from '../../components/GigCard'
 
 const STATUS_BADGE = {
   open: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800',
@@ -20,6 +22,7 @@ const STATUS_BADGE = {
 export default function GigDetailsPage() {
   const { id } = useParams()
   const { user, userProfile } = useAuth()
+  const { gigs: allGigs } = useDataCache()
   const navigate = useNavigate()
   const [gig, setGig] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -49,9 +52,10 @@ export default function GigDetailsPage() {
     }
   }, [user, userProfile])
 
+
   const loadGig = useCallback(async () => {
-    // Instant render from dummy cache
-    const cached = dummyGigs.find(g => g.id === id)
+    // Instant render from real cache or dummy cache
+    const cached = allGigs.find(g => g.id === id) || dummyGigs.find(g => g.id === id)
     if (cached) {
       setGig({ ...cached, status: cached.status || 'open' })
       setLoading(false)
@@ -83,6 +87,14 @@ export default function GigDetailsPage() {
       hasUserAppliedToGig(gig.id, user.uid).then(setApplied).catch(console.error)
     }
   }, [user, gig?.id])
+
+  // SEO hook MUST be called unconditionally (React Rules of Hooks)
+  useSEO({
+    title: gig ? `${gig.title} — Freelance Gig | WorkSphere` : 'Gig Details | WorkSphere',
+    description: gig ? `Apply for "${gig.title}" gig on WorkSphere. Budget: ${formatCurrencyINR(Number(gig.price || gig.budget || 0))}. Category: ${gig.category || 'Freelance'}. Duration: ${gig.duration || 'Flexible'}. India's gig marketplace.` : 'View gig details and apply on WorkSphere.',
+    keywords: gig ? `${gig.category || 'freelance'} gigs, ${gig.title}, gig marketplace, freelance gigs India, WorkSphere` : 'gigs, WorkSphere',
+    url: `https://wsphere.me/gigs/${id}`
+  })
 
   const handleApplyGig = async (e) => {
     e.preventDefault()
@@ -166,14 +178,6 @@ export default function GigDetailsPage() {
 
   if (loading) return <DetailSkeleton />
   if (!gig) return null
-
-  // Dynamic SEO for this specific gig
-  useSEO({
-    title: `${gig.title} — Freelance Gig | WorkSphere`,
-    description: `Apply for "${gig.title}" gig on WorkSphere. Budget: ${formatCurrencyINR(Number(gig.price || gig.budget || 0))}. Category: ${gig.category || 'Freelance'}. Duration: ${gig.duration || 'Flexible'}. India's gig marketplace.`,
-    keywords: `${gig.category || 'freelance'} gigs, ${gig.title}, gig marketplace, freelance gigs India, WorkSphere`,
-    url: `https://wsphere.me/gigs/${id}`
-  })
 
   const isOwner = user && (gig.employer_id === user.uid || gig.posted_by === user.uid)
   const isAssigned = user && gig.assignedTo === user.uid
@@ -259,7 +263,7 @@ export default function GigDetailsPage() {
 
             {/* === UPWORK-STYLE SIMPLE APPLY FORM === */}
             {showForm && !applied && gig.status === 'open' && !isOwner && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 md:p-8 animate-slide-up">
+              <div id="apply-form-section" className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 md:p-8 animate-slide-up">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Submit a Proposal</h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Tell the client why you're the right fit for this project.</p>
 
@@ -431,7 +435,16 @@ export default function GigDetailsPage() {
                 <>
                   {!showForm ? (
                     <button
-                      onClick={() => user ? setShowForm(true) : navigate('/login')}
+                      onClick={() => {
+                        if (user) {
+                          setShowForm(true)
+                          setTimeout(() => {
+                            document.getElementById('apply-form-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                          }, 100)
+                        } else {
+                          navigate('/login')
+                        }
+                      }}
                       className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 mb-4"
                     >
                       Apply Now
@@ -514,7 +527,50 @@ export default function GigDetailsPage() {
 
           </div>
         </div>
+
+        {/* Similar Gigs Section */}
+        <SimilarGigs currentGig={gig} allGigs={allGigs} />
       </div>
     </div>
   )
 }
+
+// ===== Similar Gigs Component =====
+const SimilarGigs = React.memo(function SimilarGigs({ currentGig, allGigs }) {
+  const similarGigs = useMemo(() => {
+    if (!currentGig || !allGigs?.length) return []
+    const others = allGigs.filter(g => g.id !== currentGig.id)
+    if (others.length === 0) return []
+
+    const currentSkills = new Set((currentGig.skills || []).map(s => s.toLowerCase()))
+
+    const scored = others
+      .map(g => {
+        let score = 0
+        if (g.category && currentGig.category && g.category.toLowerCase() === currentGig.category.toLowerCase()) score += 3
+        if (g.location && currentGig.location && g.location.toLowerCase() === currentGig.location.toLowerCase()) score += 1
+        ;(g.skills || []).forEach(s => {
+          if (currentSkills.has(s.toLowerCase())) score += 1
+        })
+        return { ...g, _score: score }
+      })
+      .sort((a, b) => b._score - a._score)
+
+    const matched = scored.filter(g => g._score >= 1)
+    return (matched.length > 0 ? matched : scored).slice(0, 6)
+  }, [currentGig, allGigs])
+
+  if (similarGigs.length === 0) return null
+
+  return (
+    <div className="mt-10">
+      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+        <SparklesIcon className="w-5 h-5 text-primary-500" />
+        Similar Gigs You May Like
+      </h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {similarGigs.map(g => <GigCard key={g.id} gig={g} />)}
+      </div>
+    </div>
+  )
+})

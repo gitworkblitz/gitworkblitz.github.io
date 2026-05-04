@@ -65,10 +65,10 @@ export function DataCacheProvider({ children }) {
 
   useEffect(() => {
     mountedRef.current = true
-    // Delay initial fetch to prioritize fast first paint
+    // Short delay to prioritize fast first paint, then fetch real data quickly
     const timer = setTimeout(() => {
       loadAll()
-    }, 1500)
+    }, 300)
     return () => { 
       mountedRef.current = false 
       clearTimeout(timer)

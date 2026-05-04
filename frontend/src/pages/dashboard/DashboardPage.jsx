@@ -683,7 +683,7 @@ export default function DashboardPage() {
           <div>
             <div className="flex items-center gap-3 mb-1">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {greeting}, <span className="gradient-text">{userName}</span> {greetingEmoji}
+                {greeting}, <span className="gradient-text">{userName}</span> 👋 {greetingEmoji}
               </h1>
               {userProfile?.user_type && (
                 <motion.span

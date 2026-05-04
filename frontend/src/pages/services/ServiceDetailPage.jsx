@@ -68,6 +68,26 @@ export default function ServiceDetailPage() {
     }
   }, [bookingDate, selectedSlot])
 
+  // SEO hook MUST be called unconditionally (React Rules of Hooks)
+  useSEO({
+    title: service ? `${service.title} — ${service.category || 'Professional Service'} | WorkSphere` : 'Service Details | WorkSphere',
+    description: service ? `Book ${service.title} on WorkSphere. ${service.description?.slice(0, 100) || 'Verified professionals, instant booking, secure payments.'}` : 'View service details and book on WorkSphere.',
+    keywords: service ? `${service.category || 'services'}, ${service.title}, hire workers online, home services platform, WorkSphere` : 'services, WorkSphere',
+    type: 'service',
+    url: `https://wsphere.me/services/${id}`,
+    schemaData: service ? {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": service.title,
+      "description": service.description || '',
+      "provider": { "@type": "Person", "name": service.worker_name || 'WorkSphere Professional' },
+      "areaServed": { "@type": "Place", "name": service.location || 'Delhi NCR, India' },
+      "offers": { "@type": "Offer", "price": String(service.price || 0), "priceCurrency": "INR" },
+      "aggregateRating": service.rating ? { "@type": "AggregateRating", "ratingValue": String(service.rating), "reviewCount": String(service.total_reviews || 1) } : undefined,
+      "url": `https://wsphere.me/services/${id}`
+    } : undefined
+  })
+
   const matchWorker = async () => {
     setMatchingWorker(true)
     try {
@@ -143,27 +163,6 @@ export default function ServiceDetailPage() {
       </div>
     )
   }
-
-  // Dynamic SEO for this specific service
-  const slugTitle = (service.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-  useSEO({
-    title: `${service.title} — ${service.category || 'Professional Service'} | WorkSphere`,
-    description: `Book ${service.title} on WorkSphere. ${service.description?.slice(0, 100) || 'Verified professionals, instant booking, secure payments.'}`,
-    keywords: `${service.category || 'services'}, ${service.title}, hire workers online, home services platform, WorkSphere`,
-    type: 'service',
-    url: `https://wsphere.me/services/${id}`,
-    schemaData: {
-      "@context": "https://schema.org",
-      "@type": "Service",
-      "name": service.title,
-      "description": service.description || '',
-      "provider": { "@type": "Person", "name": service.worker_name || 'WorkSphere Professional' },
-      "areaServed": { "@type": "Place", "name": service.location || 'Delhi NCR, India' },
-      "offers": { "@type": "Offer", "price": String(service.price || 0), "priceCurrency": "INR" },
-      "aggregateRating": service.rating ? { "@type": "AggregateRating", "ratingValue": String(service.rating), "reviewCount": String(service.total_reviews || 1) } : undefined,
-      "url": `https://wsphere.me/services/${id}`
-    }
-  })
 
   const today = new Date().toISOString().split('T')[0]
 

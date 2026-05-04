@@ -388,7 +388,8 @@ export async function updateApplicationStatus(applicationId, status) {
 
 export async function applyToGig(applicationData) {
   // Prevent duplicate applications — optimized check
-  const alreadyApplied = await hasUserAppliedToGig(applicationData.gigId, applicationData.userId)
+  const userId = applicationData.applicantId || applicationData.userId
+  const alreadyApplied = await hasUserAppliedToGig(applicationData.gigId, userId)
   if (alreadyApplied) {
     throw new Error('You have already applied to this gig')
   }
@@ -421,11 +422,23 @@ export async function hasUserAppliedToGig(gigId, userId) {
       limit(1)
     )
     const snap = await getDocs(q)
-    return !snap.empty
+    if (!snap.empty) return true
+
+    // Also check with applicantId field (newer form submissions)
+    const q2 = query(
+      collection(db, 'gig_applications'),
+      where('gigId', '==', gigId),
+      where('applicantId', '==', userId),
+      limit(1)
+    )
+    const snap2 = await getDocs(q2)
+    return !snap2.empty
   } catch (err) {
     // Fallback if composite index not yet created
     const apps = await queryDocuments('gig_applications', 'userId', '==', userId)
-    return apps.some(a => a.gigId === gigId)
+    if (apps.some(a => a.gigId === gigId)) return true
+    const apps2 = await queryDocuments('gig_applications', 'applicantId', '==', userId)
+    return apps2.some(a => a.gigId === gigId)
   }
 }
 

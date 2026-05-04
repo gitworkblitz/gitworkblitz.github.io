@@ -46,8 +46,8 @@ export default function JobDetailsPage() {
   }, [user, userProfile])
 
   const loadJob = useCallback(async () => {
-    // Instant render from dummy cache
-    const cached = dummyJobs.find(j => j.id === id)
+    // Instant render from real cache or dummy cache
+    const cached = allJobs.find(j => j.id === id) || dummyJobs.find(j => j.id === id)
     if (cached) {
       setJob(cached)
       setLoading(false)
@@ -81,6 +81,27 @@ export default function JobDetailsPage() {
   }, [id, user, navigate])
 
   useEffect(() => { loadJob() }, [loadJob])
+
+  // SEO hook MUST be called unconditionally (React Rules of Hooks)
+  useSEO({
+    title: job ? `${job.title} at ${job.company} — ${job.location} | WorkSphere` : 'Job Details | WorkSphere',
+    description: job ? `Apply for ${job.title} at ${job.company}. ${(job.employment_type || '').replace(/_/g, ' ')} role in ${job.location}. Salary: ${formatSalaryRange(job.salary_min || 0, job.salary_max || 0)}. Apply on WorkSphere jobs platform.` : 'View job details and apply on WorkSphere.',
+    keywords: job ? `${job.title}, ${job.company} jobs, ${job.location} jobs, jobs platform, hire workers online, WorkSphere` : 'jobs, WorkSphere',
+    type: 'jobPosting',
+    url: `https://wsphere.me/jobs/${id}`,
+    schemaData: job ? {
+      "@context": "https://schema.org",
+      "@type": "JobPosting",
+      "title": job.title,
+      "description": job.description || '',
+      "hiringOrganization": { "@type": "Organization", "name": job.company, "sameAs": "https://wsphere.me" },
+      "jobLocation": { "@type": "Place", "address": { "@type": "PostalAddress", "addressLocality": job.location, "addressCountry": "IN" } },
+      "employmentType": (job.employment_type || 'FULL_TIME').toUpperCase(),
+      "baseSalary": { "@type": "MonetaryAmount", "currency": "INR", "value": { "@type": "QuantitativeValue", "minValue": job.salary_min || 0, "maxValue": job.salary_max || 0, "unitText": "YEAR" } },
+      "datePosted": job.createdAt || new Date().toISOString(),
+      "url": `https://wsphere.me/jobs/${id}`
+    } : undefined
+  })
 
   const handleApply = async (e) => {
     e.preventDefault()
@@ -152,27 +173,6 @@ export default function JobDetailsPage() {
   if (loading) return <DetailSkeleton />
   if (!job) return null
 
-  // Dynamic SEO for this specific job
-  useSEO({
-    title: `${job.title} at ${job.company} — ${job.location} | WorkSphere`,
-    description: `Apply for ${job.title} at ${job.company}. ${(job.employment_type || '').replace(/_/g, ' ')} role in ${job.location}. Salary: ${formatSalaryRange(job.salary_min || 0, job.salary_max || 0)}. Apply on WorkSphere jobs platform.`,
-    keywords: `${job.title}, ${job.company} jobs, ${job.location} jobs, jobs platform, hire workers online, WorkSphere`,
-    type: 'jobPosting',
-    url: `https://wsphere.me/jobs/${id}`,
-    schemaData: {
-      "@context": "https://schema.org",
-      "@type": "JobPosting",
-      "title": job.title,
-      "description": job.description || '',
-      "hiringOrganization": { "@type": "Organization", "name": job.company, "sameAs": "https://wsphere.me" },
-      "jobLocation": { "@type": "Place", "address": { "@type": "PostalAddress", "addressLocality": job.location, "addressCountry": "IN" } },
-      "employmentType": (job.employment_type || 'FULL_TIME').toUpperCase(),
-      "baseSalary": { "@type": "MonetaryAmount", "currency": "INR", "value": { "@type": "QuantitativeValue", "minValue": job.salary_min || 0, "maxValue": job.salary_max || 0, "unitText": "YEAR" } },
-      "datePosted": job.createdAt || new Date().toISOString(),
-      "url": `https://wsphere.me/jobs/${id}`
-    }
-  })
-
   const isEmployer = user && (job.employer_id === user.uid || userProfile?.user_type === 'employer')
 
   const getLogoColor = (name) => {
@@ -221,7 +221,16 @@ export default function JobDetailsPage() {
                 </div>
               ) : !showForm ? (
                 <button
-                  onClick={() => user ? setShowForm(true) : navigate('/login')}
+                  onClick={() => {
+                    if (user) {
+                      setShowForm(true)
+                      setTimeout(() => {
+                        document.getElementById('apply-form-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                      }, 100)
+                    } else {
+                      navigate('/login')
+                    }
+                  }}
                   className="bg-primary-600 text-white font-semibold shadow-sm hover:shadow-md hover:bg-primary-700 px-8 py-2.5 rounded-xl transition-all"
                 >
                   Apply Now
@@ -309,7 +318,7 @@ export default function JobDetailsPage() {
 
         {/* === INTERNSHALA-STYLE SIMPLE APPLY FORM === */}
         {showForm && !applied && (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 md:p-8 animate-slide-up">
+          <div id="apply-form-section" className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 md:p-8 animate-slide-up">
             <div className="flex items-center gap-3 mb-6">
               <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg ${logoColorClass}`}>
                 {initials}
@@ -495,16 +504,18 @@ export default function JobDetailsPage() {
 const SimilarJobs = React.memo(function SimilarJobs({ currentJob, allJobs }) {
   const similarJobs = useMemo(() => {
     if (!currentJob || !allJobs?.length) return []
+    const others = allJobs.filter(j => j.id !== currentJob.id)
+    if (others.length === 0) return []
+
     const currentSkills = new Set((currentJob.skills_required || []).map(s => s.toLowerCase()))
 
-    return allJobs
-      .filter(j => j.id !== currentJob.id)
+    const scored = others
       .map(j => {
         let score = 0
         // Same category = +3
-        if (j.category === currentJob.category) score += 3
+        if (j.category && currentJob.category && j.category.toLowerCase() === currentJob.category.toLowerCase()) score += 3
         // Same location = +1
-        if (j.location === currentJob.location) score += 1
+        if (j.location && currentJob.location && j.location.toLowerCase() === currentJob.location.toLowerCase()) score += 1
         // Same type = +1
         if (j.employment_type === currentJob.employment_type) score += 1
         // Overlapping skills = +1 each
@@ -513,9 +524,11 @@ const SimilarJobs = React.memo(function SimilarJobs({ currentJob, allJobs }) {
         })
         return { ...j, _score: score }
       })
-      .filter(j => j._score >= 2)
       .sort((a, b) => b._score - a._score)
-      .slice(0, 6)
+
+    // Use scored matches if any have score >= 1, otherwise fallback to first 6
+    const matched = scored.filter(j => j._score >= 1)
+    return (matched.length > 0 ? matched : scored).slice(0, 6)
   }, [currentJob, allJobs])
 
   if (similarJobs.length === 0) return null
